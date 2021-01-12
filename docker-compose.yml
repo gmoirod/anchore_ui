@@ -1,17 +1,40 @@
 version: '3'
 services:
+  mongo:
+    image: mongo:latest
+    volumes:
+      - db-data:/data/db
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      - back-tier
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: anchore_ui
+      MONGO_INITDB_ROOT_PASSWORD: 123456
+
   scanner:
-    image: zj1244/anchore_ui:latest
+    image: anchore_ui:latest
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
     ports:
       - "8888:8888"
+    networks:
+      - front-tier
+      - back-tier
     restart: always
-    network_mode: "host"
     environment:
-      # Please modify the following configuration for redis and mongodb
-      MONGO_IP: 192.168.47.168
+      MONGO_IP: mongo
       MONGO_PORT: 27017
       MONGO_USER: anchore_ui
       MONGO_PWD: 123456
-      ANCHORE_API: http://192.168.54.13:8228
+      # Please modify the following configuration
+      ANCHORE_API: http://anchore-engine-api.nip.io
       ANCHORE_USERNAME: admin
-      ANCHORE_PASSWORD: foobar
+      ANCHORE_PASSWORD: anchore
+
+volumes:
+  db-data:
+
+networks:
+  # The presence of these objects is sufficient to define them
+  front-tier: {}
+  back-tier: {}
