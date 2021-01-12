@@ -9,9 +9,9 @@ MONGO_PORT = int(os.getenv("MONGO_PORT", 27017))
 MONGO_USER = os.getenv("MONGO_USER", "anchore_ui")
 MONGO_PWD = os.getenv("MONGO_PWD", "123456")
 # Modify the relevant configuration of the anchor according to the actual situation.
-ANCHORE_API = "http://192.168.1.1:8228"
-ANCHORE_USERNAME = "admin"
-ANCHORE_PASSWORD = "foobar"
+ANCHORE_API = os.getenv("ANCHORE_API", "http://192.168.1.1:8228")
+ANCHORE_USERNAME = os.getenv("ANCHORE_USERNAME", "admin")
+ANCHORE_PASSWORD = os.getenv("ANCHORE_PASSWORD", "foobar")
 
 # Default login password
 ACCOUNT = os.getenv("ACCOUNT", "admin")
