@@ -1,17 +1,24 @@
 version: '3'
 services:
+  mongo:
+    image: mongo:latest
+    network_mode: "host"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: anchore_ui
+      MONGO_INITDB_ROOT_PASSWORD: 123456
+
   scanner:
-    image: zj1244/anchore_ui:latest
+    image: localhost/anchore_ui:latest
     ports:
       - "8888:8888"
     restart: always
     network_mode: "host"
     environment:
       # 请修改以下redis和mongodb的配置
-      MONGO_IP: 192.168.47.168
+      MONGO_IP: mongo
       MONGO_PORT: 27017
       MONGO_USER: anchore_ui
       MONGO_PWD: 123456
-      ANCHORE_API: http://192.168.54.13:8228
+      ANCHORE_API: http://anchore-engine-api.nip.io
       ANCHORE_USERNAME: admin
-      ANCHORE_PASSWORD: foobar
+      ANCHORE_PASSWORD: anchore
