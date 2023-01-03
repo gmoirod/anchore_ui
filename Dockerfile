@@ -1,5 +1,7 @@
 FROM ubuntu:18.04
-LABEL author zj1244
+LABEL   author.original="zj1244" \
+        author.contributor="gmoirod"
+
 ENV LC_ALL C.UTF-8
 
 RUN set -x \
