@@ -10,18 +10,18 @@ class Scheduler(object):
         self.scheduler_name = scheduler_name
         self.final_result = {
             "status": "error",
-            "content": "错误",
+            "content": "Error",
             "data": {}
         }
 
     def refresh(self):
         if sync_data():
             self.final_result["status"] = "success"
-            self.final_result["content"] = "同步数据成功"
+            self.final_result["content"] = "Synchronized data successfully"
 
         else:
             self.final_result["status"] = "error"
-            self.final_result["content"] = "同步数据失败"
+            self.final_result["content"] = "Sync data failed"
         return self.final_result
 
     def add(self, job_time=None, job_unit=None):
@@ -34,12 +34,12 @@ class Scheduler(object):
                                       trigger="interval",
                                       replace_existing=True, **{job_unit: job_time})
         except:
-            log.exception("添加计划任务出错")
+            log.exception("Error adding scheduled task")
             self.final_result["status"] = "error"
-            self.final_result["content"] = "添加计划任务出错"
+            self.final_result["content"] = "Error adding scheduled task"
 
         self.final_result["status"] = "success"
-        self.final_result["content"] = "添加计划任务成功"
+        self.final_result["content"] = "Added scheduled task successfully"
         self.final_result["redirect"] = "/images_sync"
 
         return self.final_result
@@ -48,11 +48,11 @@ class Scheduler(object):
         try:
             apscheduler.delete_job(id=self.scheduler_name)
             self.final_result["status"] = "success"
-            self.final_result["content"] = "清空计划任务"
+            self.final_result["content"] = "Clear scheduled tasks"
         except:
-            log.exception("清空计划任务出错")
+            log.exception("Error clearing scheduled tasks")
             self.final_result["status"] = "error"
-            self.final_result["content"] = "清空计划任务出错"
+            self.final_result["content"] = "Error clearing scheduled tasks"
         return self.final_result
     def get(self):
         aps = apscheduler.get_job(id=self.scheduler_name)
@@ -62,7 +62,7 @@ class Scheduler(object):
                     "%Y-%m-%d %H:%M:%S")
                 self.final_result = {
                     "status": "success",
-                    "content": "获取计划任务成功",
+                    "content": "Get scheduled task success",
                     "data": {
                         "id": self.scheduler_name,
                         "next_run_time": next_run_time
@@ -71,7 +71,7 @@ class Scheduler(object):
         else:
             self.final_result = {
                 "status": "success",
-                "content": "获取计划任务成功",
+                "content": "Get scheduled task success",
                 "data": {"id": self.scheduler_name, "next_run_time": ""}
             }
         return self.final_result

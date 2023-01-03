@@ -2,48 +2,50 @@
 
 ![](docs/pic/show.png)
 
-## 介绍
+## Presentation
 
-**Anchore_ui**是一款用于展示Anchore Engine扫描结果的web系统。并且对anchore的扫描结果进行了增强，例如：对于java语言的补丁，anchore并不提供漏洞的修复版本，此系统弥补了这方面的问题。
+**Anchore_ui** This is a web-based system for presenting the results of Anchore engine scans. It also improves Anchore's scan results, for example, for java language patches, Anchore does not provide a patched version of the vulnerability, this system fixes this problem.
 
-## 支持平台
+## Supported Platforms
 
 * Linux
 * Windows
 
-## 特点
+## Features
 
-* 提供jar包修复版本号(只提供严重和高风险的漏洞版本号)
-* 导出漏洞成excel文件
-* 整合anchore扫描结果
-* 查看依赖情况(暂时只支持maven)
+* Provide version numbers of jar package patches (only severe and high-risk vulnerabilities version numbers are provided).
+* Export vulnerabilities to excel files
+* Integrate anchor analysis results
+* Show dependencies (only maven is supported at the moment)
 
-## 安装指南
+## Guide d'installation
 
 [![Python 2.7](https://img.shields.io/badge/python-2.7-yellow.svg)](https://www.python.org/) 
 [![Mongodb 3.x](https://img.shields.io/badge/mongodb-3.x-red.svg)](https://www.mongodb.com/download-center?jmp=nav)
 
-### 源码部署
+### Source Code Deployment
 
-**依赖**：项目运行依赖于mongodb，所以需准备好mongodb
+**Dependencies**: the project runs on mongodb, so you need to prepare mongodb
 
 ***
 
-**源码部署**步骤如下：
+**Source Deployment**
+
+The steps are as follows.
 
 
-#### 1. 添加mongodb认证
+#### 1. Add mongodb authentication
 
-**在 mongodb 服务器上**新建 db 用户，这里新建了一个用户名为`anchore_ui`密码为`123456`的用户。
+**Create new db user on mongodb server**, here a new user with username `anchore_ui` and password `123456` is created.
 
 ```
 # mongo
 > use admin
-> db.createUser({user:'anchore_ui',pwd:'123456', roles:[{role:'readWriteAnyDatabase', db:'admin'}]})
+> db.createUser({user:'anchore_ui',pwd:'123456', roles :[{role:'readWriteAnyDatabase', db:'admin'}]})
 > exit
 ```
 
-#### 2. 安装python依赖库
+#### 2. Install python dependencies
 
 ```
 # git clone https://github.com/zj1244/anchore_ui.git
@@ -51,42 +53,41 @@
 # pip install -r requirements.txt
 ```
 
-#### 3. 修改配置文件
+#### 3.Modify the configuration file
 
-首先将`config.py.sample`复制一份重命名为`config.py`
+First make a copy of `config.py.sample` and rename it to `config.py`.
 ```
 # cp anchore_ui/config.py.sample anchore_ui/config.py
 ```
 
-然后修改config.py里的配置信息：
+Next, change the configuration information in config.py:
 
 ```
-# 按照实际情况mongodb的相关配置
+# Track actual configuration related to mongodb
 MONGO_IP = "192.168.47.1"
 MONGO_PORT = 27017
-MONGO_USER = "root"
-MONGO_PWD = "root"
-# 按照实际情况修改anchore的相关配置
+MONGO_USER = "root
+MONGO_PWD = "root
+# Modify anchore configuration according to actual situation
 ANCHORE_API = "http://192.168.1.1:8228"
-ANCHORE_USERNAME = "admin"
-PASSWORD = "foobar"
+ANCHORE_USERNAME = " admin
+MOT DE PASSE = "foobar"
 ```
 
-#### 4. 启动
+#### 4. Startup
 
-在程序目录下执行如下命令：
-
+In the program directory, run the following command
 ```
 # python run.py
 ```
 
-### 容器化部署
+### Containerized deployment
 
-**依赖**：需提前准备好mongodb，关于mongodb的安装不再阐述，请参考：[mongodb安装](https://github.com/zj1244/beholder_scanner/blob/master/docs/mongodb.md)
+**Dependency** : mongodb should be prepared in advance, no further development on mongodb installation, please refer to: [mongodb installation](https://github.com/zj1244/beholder_scanner/blob/master/docs/mongodb.md)
 
-#### 1. 构建镜像
+#### 1. Build the image
 
-新建个docker-compose.yml文件，复制粘贴如下内容，并根据实际情况修改mongo配置信息：
+Create a new docker-compose.yml file, copy and paste the following contents, and modify the mongo configuration information according to the actual situation.
 
 ```
 version: '3'
@@ -98,7 +99,7 @@ services:
     restart: always
     network_mode: "host"
     environment:
-      # 请修改以下redis和mongodb的配置
+      # Please modify the following configuration for redis and mongodb
       MONGO_IP: 192.168.1.1
       MONGO_PORT: 27017
       MONGO_USER: anchore_ui
@@ -108,14 +109,16 @@ services:
       ANCHORE_PASSWORD: foobar
 ```
 
-#### 2. 启动容器
+#### 2. Start container
 
 ```
 # docker-compose up -d
 ```
 
-#### 3. 检查启动是否成功
-如果输出类似信息则启动成功，此时可访问[http://ip:8888](http://ip:8888)，输入docker-compose.yml里的用户名密码来登陆
+#### 3. Check startup success
+If a similar message is issued, then the boot is successful and you can access [http://ip:8888](http://ip:8888).
+
+Enter username and password from docker-compose.yml to login.
 ```bash
 # docker logs $(docker ps | grep anchore_ui | awk '{print $1}')
 [2020-07-16 Thursday 16:57] [INFO] Scheduler started
@@ -129,10 +132,10 @@ services:
 [2020-07-16 Thursday 16:57] [DEBUG] Next wakeup is due at 2020-07-16 17:04:54.782021+08:00 (in 461.596599 seconds)
 ```
 
-## 使用指南
+## User Guide
 
-### 1. 配置定时任务
+### 1. Configuring Scheduled Tasks
 
-只需配置定时任务，用于定时从anchore同步扫描信息即可
+Just set up a scheduled task to sync anchor scans at regular intervals.
 
 ![](docs/pic/1.png)

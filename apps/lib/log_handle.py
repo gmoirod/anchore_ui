@@ -27,7 +27,7 @@ class Log(object):
         if not logger.handlers:
             console = logging.StreamHandler()
 
-            console.setLevel(logging.DEBUG)  # 配置输出级别
+            console.setLevel(logging.DEBUG)  # Configure output level
             formatter = logging.Formatter('[%(asctime)s] [%(levelname)s] %(message)s')
             # if platform.system() <> "Windows":
             #     formatter = self.COLOR_SEQ % (
