@@ -231,10 +231,10 @@ def get_version(group_id, package, image_id):
     elif current_package_version.count("-") == 1:
         current_package_version = current_package_version[:current_package_version.find("-")]
     else:
-        log.info("未处理的版本号:%s image_id=%s" % (package, image_id))
+        log.info("unhandled version number:%s image_id=%s" % (package, image_id))
 
     if fix_version.has_key(package_name):
-        log.debug("找到%s的版本是%s" % (package_name, fix_version[package_name]))
+        log.debug("The version found for %s is %s" % (package_name, fix_version[package_name]))
         package_version = fix_version[package_name]
     else:
         while True:
@@ -244,7 +244,7 @@ def get_version(group_id, package, image_id):
 
             resp = retry_get(url=url, verify=False)
             if resp.status_code == 403:
-                log.info("查找包异常，status=%s" % resp.status_code)
+                log.info("Find package exceptions，status=%s" % resp.status_code)
                 time.sleep(5)
             elif resp.status_code == 404:
                 fix_version[package_name] = package_version
@@ -299,7 +299,7 @@ def sync_data(imageId=None, force=False):
                                             image['fulltag'].rfind("/") + 1:image['fulltag'].rfind(":")]
 
                     if image["analysis_status"] == "analyzed":
-                        log.info("正在同步:%s" % image["imageId"])
+                        log.info("synchronizing:%s" % image["imageId"])
                         resp_vlun = req(ANCHORE_API + "/images/by_id/" + image["imageId"] + "/vuln/all",
                                         ANCHORE_USERNAME, ANCHORE_PASSWORD)
                         if resp_vlun:
@@ -346,9 +346,9 @@ def sync_data(imageId=None, force=False):
 
                                 if vlun_item["fix"] == "None":
 
-                                    if dependency_list:  # 存在依赖列表，有的项目不是用mvn的，所以没有
+                                    if dependency_list:  # There is a dependency list, and some projects do not use mvn, so there is no dependency list
                                         try:
-                                            if vlun_item["package_type"] == "java":  # get_version只支持java
+                                            if vlun_item["package_type"] == "java":  # get_version only support java
 
                                                 package_version = get_version(vlun_item["group_id"],
                                                                               vlun_item["parents"],
@@ -361,14 +361,14 @@ def sync_data(imageId=None, force=False):
 
                                             else:
                                                 log.warning(
-                                                    "[%s][%s]包类型未处理：%s" % (
+                                                    "[%s][%s]Packet type unhandled：%s" % (
                                                         vlun_item["package"], vlun_item["package_type"],
                                                         image["imageId"]))
                                                 vlun_item["fix"] = ""
                                                 vlun_item["second_fix_version"] = ""
                                         except Exception, e:
                                             log.exception(
-                                                "获取版本出错：【%s】%s" % (vlun_item["package"], image["imageId"]))
+                                                "Error getting version：【%s】%s" % (vlun_item["package"], image["imageId"]))
                                             vlun_item["fix"] = ""
                                             vlun_item["second_fix_version"] = ""
 
@@ -383,17 +383,17 @@ def sync_data(imageId=None, force=False):
                         image["affected_package_count"] = 0
                         image["risk"] = risk
                     else:
-                        log.info("【扫描中的任务】created_at=%s,fulltag=%s" % (
+                        log.info("【Task in scan】created_at=%s,fulltag=%s" % (
                             timestamp2str(image["created_at"]), image["fulltag"]))
 
                     if image["analysis_status"] == "analyzed" or image["analysis_status"] == "analysis_failed":
-                        log.info("添加镜像：%s" % image["imageId"])
+                        log.info("add image %s" % image["imageId"])
                         mongo_anchore_result.update_many({"imageId": image["imageId"]}, {"$set": image}, upsert=True)
 
 
         return True
     except:
-        log.exception("同步数据出错")
+        log.exception("Error synchronizing data")
     return False
 
 

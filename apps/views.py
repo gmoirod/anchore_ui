@@ -26,7 +26,7 @@ def unicode2str(data):
     return convert
 
 
-# 镜像详情
+# Image Details
 @app.route('/images_details')
 @app.route('/tmp_link')
 def images_details():
@@ -63,7 +63,7 @@ def images_details():
                                resp=resp, image_id=image_id, pom_file=pom_file)
 
 
-# 分析页面
+# Analysis Page
 @app.route("/")
 @app.route("/index")
 @login_check
@@ -82,9 +82,9 @@ def login():
         password = request.form.get('password')
         if username == ACCOUNT and password == PASSWORD:
             session['login'] = 'login_success'
-            return dumps({"status": "success", "content": "登陆成功", "redirect": url_for("index")})
+            return dumps({"status": "success", "content": "Successful landing", "redirect": url_for("index")})
         else:
-            return dumps({"status": "error", "content": "密码错误"})
+            return dumps({"status": "error", "content": "Wrong password"})
 
 
 @app.route('/images_sync', methods=['get', 'post'])

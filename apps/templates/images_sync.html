@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block title %}同步设置{% endblock %}
+{% block title %}Sync Settings{% endblock %}
 {% block css %}
 
     <!-- Theme style -->
@@ -19,11 +19,11 @@
     <!-- Content Header (Page header) -->
     <section class="content-header">
         <h1>
-            同步设置
+            Sync settings
         </h1>
         <ol class="breadcrumb">
-            <li><a href="/"><i class="fa fa-dashboard"></i> 主页</a></li>
-            <li>同步设置</li>
+            <li><a href="/"><i class="fa fa-dashboard"></i>Homepage</a></li>
+            <li>Sync settings</li>
         </ol>
     </section>
 
@@ -44,10 +44,10 @@
                                style="border-left:3px solid green;border-bottom:1px solid green" id="details_table">
                             <thead>
                             <tr>
-                                <th>任务名称</th>
-                                <th>任务状态</th>
-                                <th>下次同步时间</th>
-                                <th>操作</th>
+                                <th>Task name</th>
+                                <th>Task Status</th>
+                                <th>Next synchronization time</th>
+                                <th>Operation</th>
                             </tr>
                             </thead>
                             <tbody>
@@ -56,23 +56,23 @@
                             <tr>
                                 <td><b>{{ resp.id }}</b></td>
                                 {% if  resp.next_run_time %}
-                                    <td>同步中</td>
+                                    <td>Synchronizing</td>
                                     <td>{{ resp.next_run_time }}</td>
                                 {% else %}
-                                    <td>无同步任务</td>
-                                    <td>无</td>
+                                    <td>No sync tasks</td>
+                                    <td>None</td>
                                 {% endif %}
 
                                 <td>
                                     <div>
                                         <button type="button" class="btn btn-info btn-xs"
                                                 onclick="javascript:window.location.href='/images_sync?action=add'">
-                                            添加同步任务
+                                            Add sync task
                                         </button>
 
                                         <button type="button" class="btn btn-info btn-xs"
                                                 onclick="remove_scheduler()">
-                                            删除同步任务
+                                            Delete sync task
                                         </button>
                                     </div>
                                 </td>
@@ -87,7 +87,7 @@
 
 
                             <button type="button" class="btn btn-info"
-                                    onclick="sync()">立即同步
+                                    onclick="sync()">Sync now
                                 <i class="fa fa-refresh "></i></button>
 
 

@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block title %}添加任务{% endblock %}
+{% block title %}add task{% endblock %}
 {% block css %}
 
     <!-- Theme style -->
@@ -17,11 +17,11 @@
     <!-- Content Header (Page header) -->
     <section class="content-header">
         <h1>
-            添加同步任务
+            Add sync task
         </h1>
         <ol class="breadcrumb">
-            <li><a href="/"><i class="fa fa-dashboard"></i> 主页</a></li>
-            <li class="active">添加同步任务</li>
+            <li><a href="/"><i class="fa fa-dashboard"></i>Homepage</a></li>
+            <li class="active">Add sync task</li>
         </ol>
     </section>
 
@@ -41,17 +41,17 @@
                         <div class="box-body">
 
                             <div class="form-group ">
-                                <label class="col-sm-2 control-label">循环周期</label>
+                                <label class="col-sm-2 control-label">cycle time</label>
                                 <div class="col-sm-4">
                                     <input name="job_time" type="text" class="form-control"
-                                           placeholder="数字" required>
+                                           placeholder="Number" required>
                                 </div>
                                 <div class="col-sm-6">
 
                                     <select class="form-control" name="job_unit">
 
-                                        <option value="hours">小时</option>
-                                        <option value="minutes">分钟</option>
+                                        <option value="hours">Hour(s)</option>
+                                        <option value="minutes">Minute(s)</option>
                                     </select>
                                 </div>
                             </div>
@@ -61,8 +61,8 @@
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                         <!-- /.box-body -->
                         <div class="box-footer">
-                            <input type="button" class="btn btn-info pull-right" id="add_submit" value="提交" />
-{#                            <button type="button" id="add_submit" class="btn btn-info pull-right">提交</button>#}
+                            <input type="button" class="btn btn-info pull-right" id="add_submit" value="Submit" />
+{#                            <button type="button" id="add_submit" class="btn btn-info pull-right">Submit</button>#}
                         </div>
                         <!-- /.box-footer -->
                     </form>

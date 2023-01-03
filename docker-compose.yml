@@ -7,7 +7,7 @@ services:
     restart: always
     network_mode: "host"
     environment:
-      # 请修改以下redis和mongodb的配置
+      # Please modify the following configuration for redis and mongodb
       MONGO_IP: 192.168.47.168
       MONGO_PORT: 27017
       MONGO_USER: anchore_ui

@@ -28,12 +28,12 @@
 
             <div class="panel panel-primary">
                 <div class="panel-heading">
-                    <h3 class="panel-title">基本信息</h3>
+                    <h3 class="panel-title">Basic Information</h3>
                 </div>
                 <div class="panel-body">
-                    <span class="label label-success">项目：{{ resp.project_name }}</span>
-                    <span class="label label-success">发布者：{{ resp.publisher }}</span>
-                    <span class="label label-success">docker镜像：{{ resp.fulltag }}</span>
+                    <span class="label label-success">project：{{ resp.project_name }}</span>
+                    <span class="label label-success">announcer：{{ resp.publisher }}</span>
+                    <span class="label label-success">docker image：{{ resp.fulltag }}</span>
                 </div>
             </div>
 
@@ -54,7 +54,7 @@
 
             <div class="panel panel-primary">
                 <div class="panel-heading">
-                    <h3 class="panel-title">影响组件统计</h3>
+                    <h3 class="panel-title">Affects Component Statistics</h3>
                 </div>
                 <div class="panel-body">
                     <div id="package_pie" style="height: 323px; width: 627px;"></div>
@@ -66,7 +66,7 @@
 
             <div class="panel panel-primary">
                 <div class="panel-heading">
-                    <h3 class="panel-title">危害级别统计</h3>
+                    <h3 class="panel-title">Hazard Level Statistics</h3>
                 </div>
                 <div class="panel-body">
                     <div id="risk_pie" style="height: 323px; width: 627px;"></div>
@@ -81,7 +81,7 @@
 
             <div class="panel panel-primary">
                 <div class="panel-heading">
-                    <h3 class="panel-title">漏洞信息</h3>
+                    <h3 class="panel-title">Vulnerability information</h3>
                 </div>
                 <div class="panel-body">
                     <div class="box">
@@ -92,15 +92,15 @@
                                    style="border-left:3px solid green;border-bottom:1px solid green" id="details_table">
                                 <thead>
                                 <tr>
-                                    <th>漏洞编号</th>
-                                    <th>漏洞包名</th>
-                                    <th>当前版本</th>
-                                    <th>包类型</th>
-                                    <th>等级</th>
-                                    <th>父级依赖包</th>
-                                    <th>升级至最新版本</th>
-                                    <th>升级至同版本</th>
-{#                                    <th>POC数目</th>#}
+                                    <th>Vulnerability number</th>
+                                    <th>Vulnerability package name</th>
+                                    <th>Current version</th>
+                                    <th>Package type</th>
+                                    <th>Level</th>
+                                    <th>Parent dependency package</th>
+                                    <th>Upgrade to latest version</th>
+                                    <th>Upgrade to the same version</th>
+{#                                  <th>Number of POCs</th> #}
                                 </tr>
                                 </thead>
                                 <tbody>
@@ -180,7 +180,7 @@
 
         tooltip: {
             trigger: 'item',
-            formatter: "总数 : {c} ({d}%)"
+            formatter: "Total : {c} ({d}%)"
         },
         legend: {
             orient: 'vertical',
@@ -200,7 +200,7 @@
 
         tooltip: {
             trigger: 'item',
-            formatter: "总数 : {c} ({d}%)"
+            formatter: "Total : {c} ({d}%)"
         },
         legend: {
             orient: 'vertical',
@@ -229,7 +229,7 @@
             }
         },
         legend: {
-            data: ['严重', '高', '中', '低']
+            data: ['Serious', 'High', 'Middle', 'Low']
         },
         grid: {
             left: '3%',
@@ -251,25 +251,25 @@
         ],
         series: [
             {
-                name: '严重',
+                name: 'serious',
                 type: 'line',
                 areaStyle: {},
                 data: {{ vuln_trend.critical }}
             },
             {
-                name: '高',
+                name: 'high',
                 type: 'line',
                 areaStyle: {},
                 data: {{ vuln_trend.high }}
             },
             {
-                name: '中',
+                name: 'middle',
                 type: 'line',
                 areaStyle: {},
                 data: {{ vuln_trend.medium }}
             },
             {
-                name: '低',
+                name: 'Low',
                 type: 'line',
                 areaStyle: {},
                 data: {{ vuln_trend.low }}

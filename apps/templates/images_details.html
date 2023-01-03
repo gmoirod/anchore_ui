@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block title %}镜像详情{% endblock %}
+{% block title %}Image Details{% endblock %}
 {% block css %}
 
     <!-- Theme style -->
@@ -19,12 +19,12 @@
     <!-- Content Header (Page header) -->
     <section class="content-header">
         <h1>
-            镜像详情
+            Image Details
         </h1>
         <ol class="breadcrumb">
-            <li><a href="/"><i class="fa fa-dashboard"></i> 主页</a></li>
-            <li>分析详情</li>
-            <li>镜像详情</li>
+            <li><a href="/"><i class="fa fa-dashboard"></i>Homepage</a></li>
+            <li>Analysis Details</li>
+            <li>Image Details</li>
         </ol>
     </section>
 
@@ -42,9 +42,9 @@
                 <div class="box box-danger">
                     <div class="box-header with-border">
                         <h4>
-                            <span class="label label-info">项目：{{ resp.project_name }}</span>
-                            <span class="label label-info">发布者：{{ resp.publisher }}</span>
-                            <span class="label label-info">docker镜像：{{ resp.fulltag }}</span>
+                            <span class="label label-info">project：{{ resp.project_name }}</span>
+                            <span class="label label-info">announcer：{{ resp.publisher }}</span>
+                            <span class="label label-info">docker image：{{ resp.fulltag }}</span>
                         </h4>
                         <div class="box-tools pull-right">
                             <button type="button" class="btn btn-box-tool" data-widget="collapse"><i
@@ -66,7 +66,7 @@
                 <!-- AREA CHART -->
                 <div class="box box-danger">
                     <div class="box-header with-border">
-                        <h3 class="box-title">影响组件统计</h3>
+                        <h3 class="box-title">Affects Component Statistics</h3>
 
                         <div class="box-tools pull-right">
                             <button type="button" class="btn btn-box-tool" data-widget="collapse"><i
@@ -90,7 +90,7 @@
                 <!-- LINE CHART -->
                 <div class="box box-info">
                     <div class="box-header with-border">
-                        <h3 class="box-title">危害级别统计</h3>
+                        <h3 class="box-title">Hazard Level Statistics</h3>
 
                         <div class="box-tools pull-right">
                             <button type="button" class="btn btn-box-tool" data-widget="collapse"><i
@@ -124,15 +124,15 @@
                                style="border-left:3px solid green;border-bottom:1px solid green" id="details_table">
                             <thead>
                             <tr>
-                                <th>漏洞编号</th>
-                                <th>漏洞包名</th>
-                                <th>当前版本</th>
-                                <th>包类型</th>
-                                <th>等级</th>
-                                <th>父级依赖包</th>
-                                <th>升级至最新版本</th>
-                                <th>升级至同版本</th>
-{#                                <th>POC数目</th>#}
+                                <th>Vulnerability number</th>
+                                <th>Vulnerability package name</th>
+                                <th>Current version</th>
+                                <th>Package type</th>
+                                <th>Level</th>
+                                <th>Parent dependency package</th>
+                                <th>Upgrade to latest version</th>
+                                <th>Upgrade to the same version</th>
+{#                              <th>Number of POCs</th> #}
                             </tr>
                             </thead>
                             <tbody>
@@ -181,16 +181,16 @@
                     <i class="fa fa-download"></i>
                 </button>
                 <button type="button" class="btn btn-info" onclick="setClipboard()">
-                    复制临时URL
+                    Copy temporary URL
                     <i class="fa fa-copy"></i>
                 </button>
                 {% if pom_file %}
 
-                    <button type="button" class="btn btn-info" data-toggle="modal" data-target="#pom_modal">查看POM文件
+                    <button type="button" class="btn btn-info" data-toggle="modal" data-target="#pom_modal">Check POM document
                         <i class="fa fa-eye"></i>
                     </button>
                     {% else %}
-                    <button type="button" class="btn btn-info" data-toggle="modal" data-target="#pom_modal" disabled="disabled">查看POM文件
+                    <button type="button" class="btn btn-info" data-toggle="modal" data-target="#pom_modal" disabled="disabled">Check POM document
                         <i class="fa fa-eye"></i>
                     </button>
                 {% endif %}
@@ -201,14 +201,14 @@
                                 <div class="modal-header">
                                     <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;
                                     </button>
-                                    <h4 class="modal-title" id="pom_modal_label">查看pom.xml</h4>
+                                    <h4 class="modal-title" id="pom_modal_label">Check pom.xml</h4>
                                 </div>
                                 <div class="modal-body" style="height:550px">
                                     <textarea class="form-control" rows="25">{{ pom_file }}</textarea>
 
                                 </div>
                                 <div class="modal-footer">
-                                    <button type="button" class="btn btn-primary" data-dismiss="modal">关闭</button>
+                                    <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
                                 </div>
                             </div><!-- /.modal-content -->
                         </div><!-- /.modal -->
@@ -265,17 +265,17 @@
                 SheetNames: [sheetName],
                 Sheets: {}
             };
-            workbook.Sheets[sheetName] = sheet; // 生成excel的配置项
+            workbook.Sheets[sheetName] = sheet; //Generate configuration items for excel
 
             var wopts = {
-                bookType: 'xlsx', // 要生成的文件类型
-                bookSST: false, // 是否生成Shared String Table，官方解释是，如果开启生成速度会下降，但在低版本IOS设备上有更好的兼容性
+                bookType: 'xlsx', // the type of file to generate
+                bookSST: false, // Whether to generate Shared String Table, the official explanation is that if it is turned on, the generation speed will decrease, but it has better compatibility on low-version IOS devices
                 type: 'binary'
             };
             var wbout = XLSX.write(workbook, wopts);
             var blob = new Blob([s2ab(wbout)], {
                 type: "application/octet-stream"
-            }); // 字符串转ArrayBuffer
+            }); // String to array buffer
             function s2ab(s) {
                 var buf = new ArrayBuffer(s.length);
                 var view = new Uint8Array(buf);
@@ -288,11 +288,11 @@
 
         function openDownloadDialog(url, saveName) {
             if (typeof url == 'object' && url instanceof Blob) {
-                url = URL.createObjectURL(url); // 创建blob地址
+                url = URL.createObjectURL(url); // create blob address
             }
             var aLink = document.createElement('a');
             aLink.href = url;
-            aLink.download = saveName || ''; // HTML5新增的属性，指定保存文件名，可以不要后缀，注意，file:///模式下不会生效
+            aLink.download = saveName || ''; // Html5 new attribute, specify the save file name, you can not suffix, pay attention，file:///mode does not work
             var event;
             if (window.MouseEvent) event = new MouseEvent('click');
             else {
@@ -321,7 +321,7 @@
 
             tooltip: {
                 trigger: 'item',
-                formatter: "总数 : {c} ({d}%)"
+                formatter: "Total : {c} ({d}%)"
             },
             legend: {
                 orient: 'vertical',
@@ -341,7 +341,7 @@
 
             tooltip: {
                 trigger: 'item',
-                formatter: "总数 : {c} ({d}%)"
+                formatter: "Total : {c} ({d}%)"
             },
             legend: {
                 orient: 'vertical',
@@ -360,7 +360,7 @@
         var vuln_trend = echarts.init($("#vuln_trend")[0]);
         var option = {
             title: {
-                text: '漏洞趋势'
+                text: 'Vulnerability Trend'
             },
             tooltip: {
                 trigger: 'axis',
@@ -372,7 +372,7 @@
                 }
             },
             legend: {
-                data: ['严重', '高', '中', '低']
+                data: ['Serious', 'High', 'Middle', 'Low']
             },
             grid: {
                 left: '3%',
@@ -394,25 +394,25 @@
             ],
             series: [
                 {
-                    name: '严重',
+                    name: 'serious',
                     type: 'line',
                     areaStyle: {},
                     data: {{ vuln_trend.critical }}
                 },
                 {
-                    name: '高',
+                    name: 'high',
                     type: 'line',
                     areaStyle: {},
                     data: {{ vuln_trend.high }}
                 },
                 {
-                    name: '中',
+                    name: 'middle',
                     type: 'line',
                     areaStyle: {},
                     data: {{ vuln_trend.medium }}
                 },
                 {
-                    name: '低',
+                    name: 'low',
                     type: 'line',
                     areaStyle: {},
                     data: {{ vuln_trend.low }}
