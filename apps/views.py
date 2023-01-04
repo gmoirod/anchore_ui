@@ -80,7 +80,7 @@ def login():
     else:
         username = request.form.get('username')
         password = request.form.get('password')
-        if username == ACCOUNT and password == PASSWORD:
+        if username == UI_USERNAME and password == UI_PASSWORD:
             session['login'] = 'login_success'
             return dumps({"status": "success", "content": "Successful landing", "redirect": url_for("index")})
         else:

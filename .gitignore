@@ -6,3 +6,4 @@
 config.py
 venv/
 .vscode
+docker-compose.yml

@@ -14,8 +14,8 @@ ANCHORE_USERNAME = os.getenv("ANCHORE_USERNAME", "admin")
 ANCHORE_PASSWORD = os.getenv("ANCHORE_PASSWORD", "foobar")
 
 # Default login password
-ACCOUNT = os.getenv("ACCOUNT", "admin")
-PASSWORD = os.getenv("ANCHORE_PASSWORD", "admin")
+UI_USERNAME = os.getenv("UI_USERNAME", "user")
+UI_PASSWORD = os.getenv("UI_PASSWORD", "user")
 
 # The following configurations can be kept as default
 MONGO_DB_NAME = os.getenv("MONGO_DB_NAME", "images_scan")

@@ -83,39 +83,39 @@ In the program directory, run the following command
 
 ### Containerized deployment
 
-**Dependency** : mongodb should be prepared in advance, no further development on mongodb installation, please refer to: [mongodb installation](https://github.com/zj1244/beholder_scanner/blob/master/docs/mongodb.md)
-
 #### 1. Build the image
 
-Create a new docker-compose.yml file, copy and paste the following contents, and modify the mongo configuration information according to the actual situation.
-
+```bash
+$ docker build -t anchore_ui .
 ```
-version: '3'
-services:
-  scanner:
-    image: zj1244/anchore_ui:latest
-    ports:
-      - "8888:8888"
-    restart: always
-    network_mode: "host"
+
+#### 2. Compose your containers
+
+Copy [docker-compose.yml.sample](docker-compose.yml.sample) to a docker-compose.yml and customize it with your Anchore context.
+
+```yaml
+...
     environment:
-      # Please modify the following configuration for redis and mongodb
-      MONGO_IP: 192.168.1.1
+      MONGO_IP: mongo
       MONGO_PORT: 27017
       MONGO_USER: anchore_ui
       MONGO_PWD: 123456
-      ANCHORE_API: http://192.168.1.1:8228
+      UI_USERNAME: user
+      UI_PASSWORD: user
+      # Please modify the following configuration with your Anchore settings
+      ANCHORE_API: http://anchore-engine-api.nip.io
       ANCHORE_USERNAME: admin
-      ANCHORE_PASSWORD: foobar
+      ANCHORE_PASSWORD: anchore
+...
 ```
 
-#### 2. Start container
+#### 3. Start container
 
 ```
 # docker-compose up -d
 ```
 
-#### 3. Check startup success
+#### 4. Check startup success
 If a similar message is issued, then the boot is successful and you can access [http://ip:8888](http://ip:8888).
 
 Enter username and password from docker-compose.yml to login.
