@@ -177,7 +177,7 @@
         <div class="row">
             <div class="col-sm-5">
                 <button type="button" class="btn btn-info" id="download_vlun"
-                        onclick="export_vlun('{{ resp.project_name }}.xlsx')">导出
+                        onclick="export_vlun('{{ resp.project_name }}.xlsx')">XLSX Export
                     <i class="fa fa-download"></i>
                 </button>
                 <button type="button" class="btn btn-info" onclick="setClipboard()">
@@ -372,7 +372,7 @@
                 }
             },
             legend: {
-                data: ['Serious', 'High', 'Middle', 'Low']
+                data: ['Critical', 'High', 'Medium', 'Low']
             },
             grid: {
                 left: '3%',
@@ -394,7 +394,7 @@
             ],
             series: [
                 {
-                    name: 'serious',
+                    name: 'critical',
                     type: 'line',
                     areaStyle: {},
                     data: {{ vuln_trend.critical }}
@@ -406,7 +406,7 @@
                     data: {{ vuln_trend.high }}
                 },
                 {
-                    name: 'middle',
+                    name: 'medium',
                     type: 'line',
                     areaStyle: {},
                     data: {{ vuln_trend.medium }}

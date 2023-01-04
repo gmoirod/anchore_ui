@@ -229,7 +229,7 @@
             }
         },
         legend: {
-            data: ['Serious', 'High', 'Middle', 'Low']
+            data: ['Critical', 'High', 'Medium', 'Low']
         },
         grid: {
             left: '3%',
@@ -251,7 +251,7 @@
         ],
         series: [
             {
-                name: 'serious',
+                name: 'critical',
                 type: 'line',
                 areaStyle: {},
                 data: {{ vuln_trend.critical }}
@@ -263,7 +263,7 @@
                 data: {{ vuln_trend.high }}
             },
             {
-                name: 'middle',
+                name: 'medium',
                 type: 'line',
                 areaStyle: {},
                 data: {{ vuln_trend.medium }}
