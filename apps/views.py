@@ -41,11 +41,13 @@ def images_details():
     image_id = request.args.get('image_id', '')
 
     resp = common.get_images_details(image_id)
-    for k, v in resp['total_risk'].items():
-        total_risk.append(
-            {"name": str(k), "value": v}
-        )
-    total_risk.sort()
+    total_risk.append({"name": 'Critical', "value": resp['total_risk']['critical']})
+    total_risk.append({"name": 'High', "value": resp['total_risk']['high']})
+    total_risk.append({"name": 'Medium', "value": resp['total_risk']['medium']})
+    total_risk.append({"name": 'Low', "value": resp['total_risk']['low']})
+    total_risk.append({"name": 'Negligible', "value": resp['total_risk']['negligible']})
+    total_risk.append({"name": 'Unknown', "value": resp['total_risk']['unknown']})
+
     for k, v in resp["total_package"].items():
         total_package.append(
             {"name": str(k), "value": v}

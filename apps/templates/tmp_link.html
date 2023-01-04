@@ -175,9 +175,13 @@
         });
     });
 
+    ////////////////////////////////////////////
+    // Risk Pie
+    ////////////////////////////////////////////
     var risk_pie = echarts.init($("#risk_pie")[0]);
     var option = {
 
+        color: ['#ff0000', '#ff7100', '#ffa900', '#ffcb00', '#fff800', '#b0e0e6'],
         tooltip: {
             trigger: 'item',
             formatter: "Total : {c} ({d}%)"
@@ -195,6 +199,9 @@
     };
     risk_pie.setOption(option);
 
+    ////////////////////////////////////////////
+    // Package Pie
+    ////////////////////////////////////////////
     var package_pie = echarts.init($("#package_pie")[0]);
     var option = {
 
@@ -216,15 +223,20 @@
     };
     package_pie.setOption(option);
 
+    ////////////////////////////////////////////
+    // Vuln Trend
+    ////////////////////////////////////////////
     var vuln_trend = echarts.init($("#vuln_trend")[0]);
     var option = {
 
+        color: ['#ff0000', '#ff7100', '#ffa900', '#ffcb00', '#fff800', '#b0e0e6'],
         tooltip: {
             trigger: 'axis',
             axisPointer: {
                 type: 'cross',
                 label: {
-                    backgroundColor: '#6a7985'
+                    backgroundColor: '#6a7985',
+                    precision: 0
                 }
             }
         },
@@ -251,38 +263,44 @@
         ],
         series: [
             {
-                name: 'critical',
+                name: 'Critical',
                 type: 'line',
+                stack: 'Total',
                 areaStyle: {},
                 data: {{ vuln_trend.critical }}
             },
             {
-                name: 'high',
+                name: 'High',
                 type: 'line',
+                stack: 'Total',
                 areaStyle: {},
                 data: {{ vuln_trend.high }}
             },
             {
-                name: 'medium',
+                name: 'Medium',
                 type: 'line',
+                stack: 'Total',
                 areaStyle: {},
                 data: {{ vuln_trend.medium }}
             },
             {
                 name: 'Low',
                 type: 'line',
+                stack: 'Total',
                 areaStyle: {},
                 data: {{ vuln_trend.low }}
             },
             {
                 name: 'Negligible',
                 type: 'line',
+                stack: 'Total',
                 areaStyle: {},
                 data: {{ vuln_trend.negligible }}
             },
             {
                 name: 'Unknown',
                 type: 'line',
+                stack: 'Total',
                 areaStyle: {},
                 data: {{ vuln_trend.unknown }}
             }
