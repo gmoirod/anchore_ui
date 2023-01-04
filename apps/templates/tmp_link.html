@@ -229,7 +229,7 @@
             }
         },
         legend: {
-            data: ['Critical', 'High', 'Medium', 'Low']
+            data: ['Critical', 'High', 'Medium', 'Low', 'Negligible', 'Unknown']
         },
         grid: {
             left: '3%',
@@ -274,6 +274,18 @@
                 areaStyle: {},
                 data: {{ vuln_trend.low }}
             },
+            {
+                name: 'Negligible',
+                type: 'line',
+                areaStyle: {},
+                data: {{ vuln_trend.negligible }}
+            },
+            {
+                name: 'Unknown',
+                type: 'line',
+                areaStyle: {},
+                data: {{ vuln_trend.unknown }}
+            }
         ]
     };
     vuln_trend.setOption(option);

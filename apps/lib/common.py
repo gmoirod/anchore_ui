@@ -76,7 +76,9 @@ def get_vuln_trend(project_name="", n=5):
         "critical": [],
         "high": [],
         "low": [],
-        "medium": []
+        "medium": [],
+        "negligible": [],
+        "unknown": []
 
     }
     try:
@@ -88,8 +90,10 @@ def get_vuln_trend(project_name="", n=5):
                 final_result["created_at"].insert(0, timestamp2str(i["created_at"]))
                 final_result["critical"].insert(0, i["risk"]["critical"])
                 final_result["high"].insert(0, i["risk"]["high"])
-                final_result["low"].insert(0, i["risk"]["low"])
                 final_result["medium"].insert(0, i["risk"]["medium"])
+                final_result["low"].insert(0, i["risk"]["low"])
+                final_result["negligible"].insert(0, i["risk"]["negligible"])
+                final_result["unknown"].insert(0, i["risk"]["unknown"])
 
     except:
         log.exception("error")
@@ -168,6 +172,8 @@ def get_project():
                 project_result["high"] = i["risk"]["high"]
                 project_result["medium"] = i["risk"]["medium"]
                 project_result["low"] = i["risk"]["low"]
+                project_result["negligible"] = i["risk"]["negligible"]
+                project_result["unknown"] = i["risk"]["unknown"]
                 project_result["analysis_status"] = i["analysis_status"]
                 project_result["publisher"] = i["publisher"]
                 final_result.append(project_result)
@@ -291,7 +297,9 @@ def sync_data(imageId=None, force=False):
                         'critical': 0,
                         'high': 0,
                         'medium': 0,
-                        'low': 0
+                        'low': 0,
+                        'negligible': 0,
+                        'unknown': 0
                     }
                     affected_package_count = set()
 
@@ -338,6 +346,10 @@ def sync_data(imageId=None, force=False):
                                     risk['medium'] += 1
                                 elif vlun_item['severity'] == "Low":
                                     risk['low'] += 1
+                                elif vlun_item['severity'] == "Negligible":
+                                    risk['negligible'] += 1
+                                elif vlun_item['severity'] == "Unknown":
+                                    risk['unknown'] += 1
 
                                 for k in dependency_list:
                                     if vlun_item["package_name"] in k["child"]:
