@@ -336,6 +336,7 @@ def sync_data(imageId=None, force=False):
                     image["project_name"] = image['fulltag'][
                                             image['fulltag'].rfind("/") + 1:image['fulltag'].rfind(":")]
 
+                    image["publisher"] = ""
                     if image["analysis_status"] == "analyzed":
                         log.info("synchronizing:%s-%s" % (image["imageId"], image['fulltag']))
                         resp_vlun = req(ANCHORE_API + "/images/by_id/" + image["imageId"] + "/vuln/all",
@@ -344,7 +345,6 @@ def sync_data(imageId=None, force=False):
 
                             # TODO: what does this do ?
                             dependency_list = []
-                            image["publisher"] = ""
                             resp_dependency = req(
                                 GET_DEPENDENCY_API + "/dependency/result/?docker_url=" + image['fulltag'])
 
