@@ -15,6 +15,7 @@ services:
     image: anchore_ui:latest
     volumes:
       - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
     ports:
       - "8888:8888"
     networks:
