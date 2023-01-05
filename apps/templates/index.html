@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block title %}Analysis Details{% endblock %}
+{% block title %}Images{% endblock %}
 {% block css %}
 
     <!-- Theme style -->
@@ -30,12 +30,12 @@
     <!-- Content Header (Page header) -->
     <section class="content-header">
         <h1>
-            Analysis Details
+            Images
         </h1>
         <ol class="breadcrumb">
             <li><a href="/"><i class="fa fa-dashboard"></i>Homepage</a></li>
 
-            <li class="active">Analysis Details</li>
+            <li class="active">Images</li>
         </ol>
     </section>
 
@@ -61,7 +61,7 @@
 
                             <thead>
                             <tr>
-                                <th width="20%">Element name</th>
+                                <th width="20%">Tag</th>
                                 <th width="10%">Affected packages</th>
                                 <th width="5%">Critical</th>
                                 <th width="5%">High</th>
@@ -69,7 +69,7 @@
                                 <th width="5%">Low</th>
                                 <th width="5%">Negligible</th>
                                 <th width="5%">Unknown</th>
-                                <th width="15%">Analysis time</th>
+                                <th width="15%">Last analysis</th>
                                 <th width="10%">Image id</th>
                                 <th width="10%">Analysis status</th>
                                 <th width="5%">Publisher</th>
@@ -82,12 +82,9 @@
                                 <tr>
                                     <td>
                                         <b>
-
-<span data-toggle="tooltip" data-placement="left"
-                                              title="{{ item['project_name'] }}"><a href="/images_details?image_id={{ item['imageId'] }}"
-                                              target="_Blank">{{ item['project_name'] }}</a></span>
-
-
+                                            <span data-toggle="tooltip" data-placement="left"
+                                              title="{{ item['fulltag'] }}"><a href="/images_details?fulltag={{ item['fulltag'] }}"
+                                              target="_Blank">{{ item['fulltag'] }}</a></span>
                                         </b>
                                     </td>
                                     <td>{{ item['affected_package_count'] }}</td>
@@ -98,19 +95,12 @@
                                     <td>{{ item['negligible'] }}</td>
                                     <td>{{ item['unknown'] }}</td>
                                     <td>{{ item['analyzed_at'] }}</td>
-
-                                    <td>
-{{ item['imageId'] }}
-
-                                    </td>
+                                    <td>{{ item['imageId'] }}</td>
                                     <td>{{ item['analysis_status'] }}</td>
                                     <td>
-
-<span data-toggle="tooltip" data-placement="left"
+                                            <span data-toggle="tooltip" data-placement="left"
                                               title="{{ item['publisher'] }}">{{ item['publisher'] }}</span>
-
                                     </td>
-
                                 </tr>
                             {% endfor %}
 

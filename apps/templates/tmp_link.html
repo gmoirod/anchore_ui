@@ -54,7 +54,7 @@
 
             <div class="panel panel-primary">
                 <div class="panel-heading">
-                    <h3 class="panel-title">Affects Component Statistics</h3>
+                    <h3 class="panel-title">Affects Component Statistics (last analysis)</h3>
                 </div>
                 <div class="panel-body">
                     <div id="package_pie" style="height: 323px; width: 627px;"></div>
@@ -66,7 +66,7 @@
 
             <div class="panel panel-primary">
                 <div class="panel-heading">
-                    <h3 class="panel-title">Hazard Level Statistics</h3>
+                    <h3 class="panel-title">Hazard Level Statistics (last analysis)</h3>
                 </div>
                 <div class="panel-body">
                     <div id="risk_pie" style="height: 323px; width: 627px;"></div>
@@ -81,7 +81,7 @@
 
             <div class="panel panel-primary">
                 <div class="panel-heading">
-                    <h3 class="panel-title">Vulnerability information</h3>
+                    <h3 class="panel-title">Vulnerability information (last analysis)</h3>
                 </div>
                 <div class="panel-body">
                     <div class="box">
@@ -253,7 +253,7 @@
             {
                 type: 'category',
                 boundaryGap: false,
-                data: {{ vuln_trend.created_at |unicode2str|safe }}
+                data: {{ vuln_trend.analyzed_at |unicode2str|safe }}
             }
         ],
         yAxis: [

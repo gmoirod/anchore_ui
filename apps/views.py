@@ -38,9 +38,9 @@ def images_details():
     total_package = []
     analysis_date = []
 
-    image_id = request.args.get('image_id', '')
+    fulltag = request.args.get('fulltag', '')
 
-    resp = common.get_images_details(image_id)
+    resp = common.get_last_analysis(fulltag)
     total_risk.append({"name": 'Critical', "value": resp['total_risk']['critical']})
     total_risk.append({"name": 'High', "value": resp['total_risk']['high']})
     total_risk.append({"name": 'Medium', "value": resp['total_risk']['medium']})
@@ -53,16 +53,16 @@ def images_details():
             {"name": str(k), "value": v}
         )
 
-    vuln_trend = common.get_vuln_trend(resp["project_name"])
-    pom_file = common.get_pom_file(resp["fulltag"])
+    vuln_trend = common.get_vuln_trend(fulltag)
+    pom_file = common.get_pom_file(fulltag)
     if request.path == "/images_details":
         return render_template('images_details.html', vuln_trend=vuln_trend,
                                total_risk=total_risk, total_package=total_package, analysis_date=analysis_date,
-                               resp=resp, image_id=image_id, pom_file=pom_file)
+                               resp=resp, fulltag=fulltag, pom_file=pom_file)
     else:
         return render_template('tmp_link.html', vuln_trend=vuln_trend,
                                total_risk=total_risk, total_package=total_package, analysis_date=analysis_date,
-                               resp=resp, image_id=image_id, pom_file=pom_file)
+                               resp=resp, fulltag=fulltag, pom_file=pom_file)
 
 
 # Analysis Page
@@ -71,7 +71,7 @@ def images_details():
 @login_check
 @csrf.exempt
 def index():
-    resp = common.get_project()
+    resp = common.get_images()
     return render_template('index.html', resp=resp)
 
 

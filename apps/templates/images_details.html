@@ -23,7 +23,7 @@
         </h1>
         <ol class="breadcrumb">
             <li><a href="/"><i class="fa fa-dashboard"></i>Homepage</a></li>
-            <li>Analysis Details</li>
+            <li>Images</li>
             <li>Image Details</li>
         </ol>
     </section>
@@ -66,7 +66,7 @@
                 <!-- AREA CHART -->
                 <div class="box box-danger">
                     <div class="box-header with-border">
-                        <h3 class="box-title">Affects Component Statistics</h3>
+                        <h3 class="box-title">Affects Component Statistics (last analysis)</h3>
 
                         <div class="box-tools pull-right">
                             <button type="button" class="btn btn-box-tool" data-widget="collapse"><i
@@ -90,7 +90,7 @@
                 <!-- LINE CHART -->
                 <div class="box box-info">
                     <div class="box-header with-border">
-                        <h3 class="box-title">Hazard Level Statistics</h3>
+                        <h3 class="box-title">Hazard Level Statistics (last analysis)</h3>
 
                         <div class="box-tools pull-right">
                             <button type="button" class="btn btn-box-tool" data-widget="collapse"><i
@@ -118,6 +118,9 @@
 
                 <div class="box">
                     <!-- /.box-header -->
+                    <div class="box-header">
+                        <h3 class="box-title">Vulnerabilities (last analysis)</h3>
+                    </div>
 
                     <div class="box-body">
                         <table class="table  table-hover"
@@ -250,7 +253,7 @@
 
         function setClipboard() {
             var tempInput = document.createElement("input");
-            var value = window.location.host + "/tmp_link?image_id={{ image_id }}";
+            var value = window.location.host + "/tmp_link?fulltag={{ fulltag }}";
             tempInput.style = "position: absolute; left: -1000px; top: -1000px";
             tempInput.value = value;
             document.body.appendChild(tempInput);
@@ -396,7 +399,7 @@
                 {
                     type: 'category',
                     boundaryGap: false,
-                    data: {{ vuln_trend.created_at |unicode2str|safe }}
+                    data: {{ vuln_trend.analyzed_at |unicode2str|safe }}
                 }
             ],
             yAxis: [

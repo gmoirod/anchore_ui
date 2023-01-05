@@ -69,10 +69,12 @@ def req(url, user="", pwd=""):
 
     return resp_json
 
-
-def get_vuln_trend(project_name="", n=5):
+##
+# Return dataset of the n'th last analysis of given image
+##
+def get_vuln_trend(fulltag="", n=5):
     final_result = {
-        "created_at": [],
+        "analyzed_at": [],
         "critical": [],
         "high": [],
         "low": [],
@@ -82,12 +84,11 @@ def get_vuln_trend(project_name="", n=5):
 
     }
     try:
-        images = mongo.conn[MONGO_DB_NAME][MONGO_SCAN_RESULT_COLL].find({"project_name": project_name}).sort(
-            "created_at", -1).limit(n)
+        images = mongo.conn[MONGO_DB_NAME][MONGO_SCAN_RESULT_COLL].find({"fulltag": fulltag}).sort("analyzed_at", -1).limit(n)
 
         if images.count():
             for i in images:
-                final_result["created_at"].insert(0, timestamp2str(i["created_at"]))
+                final_result["analyzed_at"].insert(0, timestamp2str(i["analyzed_at"]))
                 final_result["critical"].insert(0, i["risk"]["critical"])
                 final_result["high"].insert(0, i["risk"]["high"])
                 final_result["medium"].insert(0, i["risk"]["medium"])
@@ -105,20 +106,30 @@ def validate_is_dict(option, value):
     if not isinstance(value, dict):
         raise TypeError("%s must be an instance of dict" % (option,))
 
-
-def get_images_details(image_id=""):
+##
+# Return last analysis of given image
+##
+def get_last_analysis(fulltag=""):
+    #log.debug("get_last_analysis(%s)" % fulltag)
     images_details = {}
 
     mongo_anchore_result = mongo.conn[MONGO_DB_NAME][MONGO_SCAN_RESULT_COLL]
-    images = mongo_anchore_result.find_one({"imageId": image_id})
-    if images:
-        images_details["fulltag"] = images["fulltag"]
-        images_details["project_name"] = images["project_name"]
+    # Find last image analysis
+    lastAnalysis = mongo_anchore_result.find_one(filter={"fulltag": fulltag}, sort=[("analyzed_at", -1)])
+
+    if lastAnalysis:
+        #log.debug("imageId: %s" % lastAnalysis["imageId"])
+
+        # Construct DTO
+        images_details["fulltag"] = lastAnalysis["fulltag"]
+        images_details["project_name"] = lastAnalysis["project_name"]
         images_details["total_package"] = {}
-        images_details["vulnerabilities"] = images["vulnerabilities"]
-        images_details["publisher"] = images["publisher"]
+        images_details["vulnerabilities"] = lastAnalysis["vulnerabilities"]
+        images_details["publisher"] = lastAnalysis["publisher"]
+
+        # TODO : Ensure this aggregate packages of LAST analysis
         total_package_sum = mongo_anchore_result.aggregate([
-            {'$match': {'imageId': image_id}},
+            {'$match': {'imageId': lastAnalysis["imageId"]}},
             {"$unwind": "$vulnerabilities"},
             {"$group": {"_id": "$vulnerabilities.package_name", "sum": {"$sum": 1}}},
             {"$sort": {"sum": -1}},
@@ -127,7 +138,7 @@ def get_images_details(image_id=""):
         for i in total_package_sum:
             images_details["total_package"][i["_id"]] = i["sum"]
 
-        images_details["total_risk"] = images["risk"]
+        images_details["total_risk"] = lastAnalysis["risk"]
     return images_details
 
 
@@ -141,31 +152,38 @@ def get_pom_file(docker_url=""):
     return result
 
 
-def get_project():
+##
+# Return collection of images grouped by fulltag
+##
+def get_images():
     final_result = []
+    # Get all analysis
     mongo_anchore_result = mongo.conn[MONGO_DB_NAME][MONGO_SCAN_RESULT_COLL]
     images = mongo_anchore_result.find()
     if images.count():
 
+        # Group by fulltag, ordered by creation DESC
         images_analysis = mongo_anchore_result.aggregate(
             [{"$group": {
-                "_id": "$project_name",
-                "last_time": {"$max": "$created_at"},
-                "risk": {"$last": "$risk"},
-                "created_at": {"$last": "$created_at"},
-                "affected_package_count": {"$last": "$affected_package_count"},
-                "imageId": {"$last": "$imageId"},
-                "analysis_status": {"$last": "$analysis_status"},
-                "publisher": {"$last": "$publisher"}
+                "_id": "$fulltag",
+                "risk": {"$first": "$risk"},
+                "analyzed_at": {"$max": "$analyzed_at"},
+                "affected_package_count": {"$first": "$affected_package_count"},
+                "imageId": {"$first": "$imageId"},
+                "analysis_status": {"$first": "$analysis_status"},
+                "publisher": {"$first": "$publisher"}
             }
-            }, {"$sort": {"created_at": -1}}])
+            }, {"$sort": {"analyzed_at": -1}}])
+
+        # Construct DTOs
         for i in images_analysis:
+            #log.debug("Image %s, id %s" % (i["_id"], i["imageId"]))
             project_result = {}
             try:
 
                 project_result["affected_package_count"] = i.get("affected_package_count", "")
-                project_result["project_name"] = i["_id"]
-                project_result["analyzed_at"] = timestamp2str(i["created_at"])
+                project_result["fulltag"] = i["_id"]
+                project_result["analyzed_at"] = timestamp2str(i["analyzed_at"])
                 project_result["imageId"] = i["imageId"]
 
                 project_result["critical"] = i["risk"]["critical"]
@@ -179,6 +197,7 @@ def get_project():
                 final_result.append(project_result)
 
             except:
+                # TODO : do we sync by imageid or fulltag ?
                 executor.submit(sync_data, imageId=i["imageId"], force=True)
                 # sync_data(imageId=i["imageId"], force=True)
                 log.exception(i)
@@ -273,12 +292,15 @@ def get_version(group_id, package, image_id):
 def sync_data(imageId=None, force=False):
     try:
         mongo_anchore_result = mongo.conn[MONGO_DB_NAME][MONGO_SCAN_RESULT_COLL]
-        all_images = mongo_anchore_result.find({}, {"imageId": 1, "created_at": 1}, sort=[('created_at', -1)])
+        # Get all images in local db sorted by created_at DESCENDING
+        all_images = mongo_anchore_result.find({}, {"imageId": 1, "fulltag": 1, "created_at": 1}, sort=[('created_at', -1)])
 
+        # List all image tags in Anchore visible to the user
         resp_summaries = req(ANCHORE_API + "/summaries/imagetags", ANCHORE_USERNAME, ANCHORE_PASSWORD)
 
         if resp_summaries:
             if imageId:
+                # In case of sync a specific image, filter out wanted images from Anchore results
                 for resp_dict in resp_summaries:
                     if resp_dict["imageId"] == imageId:
                         resp_summaries = [resp_dict]
@@ -286,13 +308,21 @@ def sync_data(imageId=None, force=False):
                 else:
                     return True
             else:
-
+                # In case of a global sync, sort Anchore results by created_at DESCENDING
                 resp_summaries.sort(key=lambda x: x["created_at"], reverse=True)
+                # If last analysis returned by Anchore = last one in local db, stop here (we are up to date)
                 if all_images.count() and  resp_summaries[0]["created_at"] == all_images[0]["created_at"]:
                     resp_summaries = []
-            all_images_id = map(lambda x: x["imageId"], all_images)
+            
+            # Retain a list of known images in local db (pair imageid and fulltag)
+            # We want all fulltag and all images for this tag to get a trend by tag
+            all_images_id_tag = map(lambda x: x["imageId"]+"-"+x["fulltag"], all_images)
+
+            # Loop on Anchore results
             for image in resp_summaries:
-                if image["imageId"] not in all_images_id or force == True:
+                # If current analysis concerns a pair (imageid, fulltag) not known locally, or we force sync, init a new local image object
+                image_id_tag = ""+image["imageId"]+"-"+image["fulltag"]
+                if image_id_tag not in all_images_id_tag or force == True:
                     risk = {
                         'critical': 0,
                         'high': 0,
@@ -307,11 +337,12 @@ def sync_data(imageId=None, force=False):
                                             image['fulltag'].rfind("/") + 1:image['fulltag'].rfind(":")]
 
                     if image["analysis_status"] == "analyzed":
-                        log.info("synchronizing:%s" % image["imageId"])
+                        log.info("synchronizing:%s-%s" % (image["imageId"], image['fulltag']))
                         resp_vlun = req(ANCHORE_API + "/images/by_id/" + image["imageId"] + "/vuln/all",
                                         ANCHORE_USERNAME, ANCHORE_PASSWORD)
                         if resp_vlun:
 
+                            # TODO: what does this do ?
                             dependency_list = []
                             image["publisher"] = ""
                             resp_dependency = req(
@@ -322,9 +353,12 @@ def sync_data(imageId=None, force=False):
                                 dependency_list = get_parents(dependency_result)
                                 image["publisher"] = resp_dependency["publisher"]
 
+                            # Manage vulnerabilities 1 by 1
                             for vlun_item in resp_vlun['vulnerabilities']:
+                                # Add package_name to the set
                                 affected_package_count.add(vlun_item['package_name'])
 
+                                # Get package name
                                 if vlun_item["package_type"] == "java":
                                     package_name = vlun_item["package_path"][
                                                    vlun_item["package_path"].rfind('/') + 1:]
@@ -338,6 +372,7 @@ def sync_data(imageId=None, force=False):
                                     package_name = vlun_item["package_name"]
                                 vlun_item["package_name"] = package_name
 
+                                # Increment corresponding severity
                                 if vlun_item['severity'] == "Critical":
                                     risk['critical'] += 1
                                 elif vlun_item['severity'] == "High":
@@ -351,11 +386,13 @@ def sync_data(imageId=None, force=False):
                                 elif vlun_item['severity'] == "Unknown":
                                     risk['unknown'] += 1
 
+                                # TODO: what does this do ?
                                 for k in dependency_list:
                                     if vlun_item["package_name"] in k["child"]:
                                         vlun_item["parents"] = k["parents"]
                                         vlun_item["group_id"] = k["group_id"]
 
+                                # TODO: what does this do ?
                                 if vlun_item["fix"] == "None":
 
                                     if dependency_list:  # There is a dependency list, and some projects do not use mvn, so there is no dependency list
@@ -385,9 +422,7 @@ def sync_data(imageId=None, force=False):
                                             vlun_item["second_fix_version"] = ""
 
                             image["affected_package_count"] = len(affected_package_count)
-
                             image["vulnerabilities"] = resp_vlun["vulnerabilities"]
-
                             image["risk"] = risk
 
                     elif image["analysis_status"] == "analysis_failed":
@@ -399,8 +434,8 @@ def sync_data(imageId=None, force=False):
                             timestamp2str(image["created_at"]), image["fulltag"]))
 
                     if image["analysis_status"] == "analyzed" or image["analysis_status"] == "analysis_failed":
-                        log.info("add image %s" % image["imageId"])
-                        mongo_anchore_result.update_many({"imageId": image["imageId"]}, {"$set": image}, upsert=True)
+                        log.info("add image %s-%s" % (image["imageId"], image['fulltag']))
+                        mongo_anchore_result.update_many({"imageId": image["imageId"], "fulltag": image["fulltag"]}, {"$set": image}, upsert=True)
 
 
         return True
