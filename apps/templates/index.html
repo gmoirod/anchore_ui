@@ -12,10 +12,9 @@
         .detail {
             table-layout: fixed;
             width: 100%;
-            white-space: nowrap;
         }
 
-        .detail td {
+        .detail .nowrap {
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -55,36 +54,38 @@
 
 
                     <div class="box-body">
-                        <table class="table  table-hover detail"
+                        <table class="table table-hover detail"
                                style="border-left:3px solid deepskyblue;border-bottom:1px solid deepskyblue"
                                id="analysis_table">
 
                             <thead>
-                            <tr>
-                                <th width="20%">Tag</th>
-                                <th width="10%">Affected packages</th>
-                                <th width="5%">Critical</th>
-                                <th width="5%">High</th>
-                                <th width="5%">Medium</th>
-                                <th width="5%">Low</th>
-                                <th width="5%">Negligible</th>
-                                <th width="5%">Unknown</th>
-                                <th width="15%">Last analysis</th>
-                                <th width="10%">Image id</th>
-                                <th width="10%">Analysis status</th>
-                                <th width="5%">Publisher</th>
-                            </tr>
+                                <tr>
+                                    <th>Tag</th>
+                                    <th>Affected packages</th>
+                                    <th>Critical</th>
+                                    <th>High</th>
+                                    <th>Medium</th>
+                                    <th>Low</th>
+                                    <th>Negligible</th>
+                                    <th>Unknown</th>
+                                    <th>Last analysis</th>
+                                    <th>Image id</th>
+                                    <th>Analysis status</th>
+                                    <th>Publisher</th>
+                                </tr>
                             </thead>
+
                             <tbody>
-
-
                             {% for item in resp %}
                                 <tr>
                                     <td>
                                         <b>
+                                            
                                             <span data-toggle="tooltip" data-placement="left"
                                               title="{{ item['fulltag'] }}"><a href="/images_details?fulltag={{ item['fulltag'] }}"
                                               target="_Blank">{{ item['fulltag'] }}</a></span>
+                                            
+                                             <!--  {{ item['fulltag'] }}  -->
                                         </b>
                                     </td>
                                     <td>{{ item['affected_package_count'] }}</td>
@@ -95,16 +96,14 @@
                                     <td>{{ item['negligible'] }}</td>
                                     <td>{{ item['unknown'] }}</td>
                                     <td>{{ item['analyzed_at'] }}</td>
-                                    <td>{{ item['imageId'] }}</td>
+                                    <td class="nowrap">{{ item['imageId'] }}</td>
                                     <td>{{ item['analysis_status'] }}</td>
                                     <td>
-                                            <span data-toggle="tooltip" data-placement="left"
-                                              title="{{ item['publisher'] }}">{{ item['publisher'] }}</span>
+                                        <span data-toggle="tooltip" data-placement="left"
+                                            title="{{ item['publisher'] }}">{{ item['publisher'] }}</span>
                                     </td>
                                 </tr>
                             {% endfor %}
-
-
                             </tbody>
                         </table>
                     </div>
@@ -149,8 +148,23 @@
     <script>
         $(document).ready(function () {
             $('#analysis_table').DataTable({
-                "searching": true,
-                'order': [1, 'desc']
+                order: [8, 'desc'],
+                searching: true,
+                autoWidth: false,
+                columns: [
+                    { width: '35%' },
+                    { width: '5%' },
+                    { width: '5%' },
+                    { width: '5%' },
+                    { width: '5%' },
+                    { width: '5%' },
+                    { width: '5%' },
+                    { width: '5%' },
+                    { width: '10%' },
+                    { width: '10%' },
+                    { width: '5%' },
+                    { width: '5%' }
+                ] 
             });
         });
 

@@ -262,6 +262,9 @@
             document.body.removeChild(tempInput);
         }
 
+        ////////////////////////////////////////////
+        // XLSX export
+        ////////////////////////////////////////////
         function sheet2blob(sheet, sheetName) {
             sheetName = sheetName || 'sheet1';
             var workbook = {
@@ -311,7 +314,9 @@
             openDownloadDialog(sheet2blob(sheet), save_name);
         }
 
-
+        ////////////////////////////////////////////
+        // Vuln Table
+        ////////////////////////////////////////////
         $(document).ready(function () {
             $('#details_table').DataTable({
                 "searching": true,
