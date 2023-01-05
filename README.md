@@ -18,7 +18,7 @@
 * Integrate anchor analysis results
 * Show dependencies (only maven is supported at the moment)
 
-## Guide d'installation
+## Install guide
 
 [![Python 2.7](https://img.shields.io/badge/python-2.7-yellow.svg)](https://www.python.org/) 
 [![Mongodb 3.x](https://img.shields.io/badge/mongodb-3.x-red.svg)](https://www.mongodb.com/download-center?jmp=nav)
@@ -89,7 +89,36 @@ In the program directory, run the following command
 $ docker build -t anchore_ui .
 ```
 
-#### 2. Compose your containers
+#### 2. Start your containers
+
+```bash
+$ docker run -d \
+  -p 27017:27017 \
+  -e MONGO_INITDB_ROOT_USERNAME="anchore_ui" \
+  -e MONGO_INITDB_ROOT_PASSWORD=123456 \
+  -v /etc/localtime:/etc/localtime:ro \
+  -v /some/path:/data/db \
+  --name mongo \
+  mongo:latest
+
+$ docker run -d \
+  --network=host \
+  -e MONGO_IP="localhost" \
+  -e MONGO_PORT="27017" \
+  -e MONGO_USER="anchore_ui" \
+  -e MONGO_PWD="123456" \
+  -e UI_USERNAME="user" \
+  -e UI_PASSWORD="user" \
+  -e ANCHORE_API="http://anchore-engine-api.nip.io" \
+  -e ANCHORE_USERNAME="admin" \
+  -e ANCHORE_PASSWORD="anchore" \
+  -v /etc/localtime:/etc/localtime:ro \
+  -v /etc/timezone:/etc/timezone:ro \
+  --name anchore_ui \
+  anchore_ui:latest
+```
+
+#### 2b. Compose your containers
 
 Copy [docker-compose.yml.sample](docker-compose.yml.sample) to a docker-compose.yml and customize it with your Anchore context.
 
@@ -109,13 +138,10 @@ Copy [docker-compose.yml.sample](docker-compose.yml.sample) to a docker-compose.
 ...
 ```
 
-#### 3. Start container
-
+**Start container**
+```bash
+$ docker-compose up -d
 ```
-# docker-compose up -d
-```
-
-#### 4. Check startup success
 If a similar message is issued, then the boot is successful and you can access [http://ip:8888](http://ip:8888).
 
 Enter username and password from docker-compose.yml to login.
