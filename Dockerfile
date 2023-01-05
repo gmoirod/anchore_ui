@@ -22,3 +22,4 @@ RUN set -x \
 WORKDIR /opt/anchore_ui
 ENTRYPOINT ["python","run.py"]
 CMD ["/usr/bin/tail", "-f", "/dev/null"]
+USER 1001
