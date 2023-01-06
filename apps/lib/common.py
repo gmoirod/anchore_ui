@@ -129,7 +129,7 @@ def get_last_analysis(fulltag=""):
 
         # TODO : Ensure this aggregate packages of LAST analysis
         total_package_sum = mongo_anchore_result.aggregate([
-            {'$match': {'imageId': lastAnalysis["imageId"]}},
+            {'$match': {'_id': lastAnalysis["_id"]}},
             {"$unwind": "$vulnerabilities"},
             {"$group": {"_id": "$vulnerabilities.package_name", "sum": {"$sum": 1}}},
             {"$sort": {"sum": -1}},
