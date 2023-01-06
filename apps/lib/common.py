@@ -293,7 +293,7 @@ def sync_data(imageId=None, force=False):
     try:
         mongo_anchore_result = mongo.conn[MONGO_DB_NAME][MONGO_SCAN_RESULT_COLL]
         # Get all images in local db sorted by created_at DESCENDING
-        all_images = mongo_anchore_result.find({}, {"imageId": 1, "fulltag": 1, "created_at": 1}, sort=[('created_at', -1)])
+        all_images = mongo_anchore_result.find({}, {"imageId": 1, "fulltag": 1, "analyzed_at": 1}, sort=[('created_at', -1)])
 
         # List all image tags in Anchore visible to the user
         resp_summaries = req(ANCHORE_API + "/summaries/imagetags", ANCHORE_USERNAME, ANCHORE_PASSWORD)
@@ -309,19 +309,20 @@ def sync_data(imageId=None, force=False):
                     return True
             else:
                 # In case of a global sync, sort Anchore results by created_at DESCENDING
-                resp_summaries.sort(key=lambda x: x["created_at"], reverse=True)
+                resp_summaries.sort(key=lambda x: x["analyzed_at"], reverse=True)
                 # If last analysis returned by Anchore = last one in local db, stop here (we are up to date)
-                if all_images.count() and  resp_summaries[0]["created_at"] == all_images[0]["created_at"]:
+                if all_images.count() and  resp_summaries[0]["analyzed_at"] == all_images[0]["analyzed_at"]:
                     resp_summaries = []
             
-            # Retain a list of known images in local db (pair imageid and fulltag)
+            # Retain a list of known images in local db (triplet imageid/fulltag/analyzed_at)
             # We want all fulltag and all images for this tag to get a trend by tag
-            all_images_id_tag = map(lambda x: x["imageId"]+"-"+x["fulltag"], all_images)
+            # And an analysis can be forced and so will get a new analyzed_at
+            all_images_id_tag = map(lambda x: x["imageId"]+"-"+x["fulltag"]+"-"+timestamp2str(x["analyzed_at"]), all_images)
 
             # Loop on Anchore results
             for image in resp_summaries:
-                # If current analysis concerns a pair (imageid, fulltag) not known locally, or we force sync, init a new local image object
-                image_id_tag = ""+image["imageId"]+"-"+image["fulltag"]
+                # If current analysis concerns a triplet not known locally, or we force sync, init a new local image object
+                image_id_tag = ""+image["imageId"]+"-"+image["fulltag"]+"-"+timestamp2str(image["analyzed_at"])
                 if image_id_tag not in all_images_id_tag or force == True:
                     risk = {
                         'critical': 0,
@@ -435,7 +436,7 @@ def sync_data(imageId=None, force=False):
 
                     if image["analysis_status"] == "analyzed" or image["analysis_status"] == "analysis_failed":
                         log.info("add image %s-%s" % (image["imageId"], image['fulltag']))
-                        mongo_anchore_result.update_many({"imageId": image["imageId"], "fulltag": image["fulltag"]}, {"$set": image}, upsert=True)
+                        mongo_anchore_result.update_many({"imageId": image["imageId"], "fulltag": image["fulltag"], "fulltag": image["analyzed_at"]}, {"$set": image}, upsert=True)
 
 
         return True
