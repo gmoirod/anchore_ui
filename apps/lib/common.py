@@ -162,18 +162,21 @@ def get_images():
     images = mongo_anchore_result.find()
     if images.count():
 
-        # Group by fulltag, ordered by creation DESC
-        images_analysis = mongo_anchore_result.aggregate(
-            [{"$group": {
+        # Group by fulltag
+        images_analysis = mongo_anchore_result.aggregate([
+            # sort DESC
+            {"$sort": {"analyzed_at": -1}},   # Null value possible when analysis_failed, but it will appear last
+            # then group by fulltag, taking 1st repeting element
+            {"$group": {
                 "_id": "$fulltag",
                 "risk": {"$first": "$risk"},
-                "analyzed_at": {"$max": "$analyzed_at"},
+                "analyzed_at": {"$first": "$analyzed_at"},
                 "affected_package_count": {"$first": "$affected_package_count"},
                 "imageId": {"$first": "$imageId"},
                 "analysis_status": {"$first": "$analysis_status"},
                 "publisher": {"$first": "$publisher"}
-            }
-            }, {"$sort": {"analyzed_at": -1}}])
+            }}
+        ])
 
         # Construct DTOs
         for i in images_analysis:
