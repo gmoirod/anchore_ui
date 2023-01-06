@@ -292,8 +292,14 @@ def get_version(group_id, package, image_id):
     return package_version
 
 
+##
+# Retrieve new analysis and stores them in Mongo
+# return: 0 if ok, -1 if fails, 1 if some non fatal errors
+##
 def sync_data(imageId=None, force=False):
     try:
+        syncSuccess = True
+
         mongo_anchore_result = mongo.conn[MONGO_DB_NAME][MONGO_SCAN_RESULT_COLL]
         # Get all images in local db sorted by created_at DESCENDING
         all_images = mongo_anchore_result.find({}, {"imageId": 1, "fulltag": 1, "analyzed_at": 1}, sort=[('created_at', -1)])
@@ -309,14 +315,8 @@ def sync_data(imageId=None, force=False):
                         resp_summaries = [resp_dict]
                         break
                 else:
-                    return True
-            else:
-                # In case of a global sync, sort Anchore results by created_at DESCENDING
-                resp_summaries.sort(key=lambda x: x["analyzed_at"], reverse=True)
-                # If last analysis returned by Anchore = last one in local db, stop here (we are up to date)
-                if all_images.count() and  resp_summaries[0]["analyzed_at"] == all_images[0]["analyzed_at"]:
-                    resp_summaries = []
-            
+                    return 0
+
             # Retain a list of known images in local db (triplet imageid/fulltag/analyzed_at)
             # We want all fulltag and all images for this tag to get a trend by tag
             # And an analysis can be forced and so will get a new analyzed_at
@@ -324,128 +324,139 @@ def sync_data(imageId=None, force=False):
 
             # Loop on Anchore results
             for image in resp_summaries:
-                # If current analysis concerns a triplet not known locally, or we force sync, init a new local image object
-                image_id_tag = ""+image["imageId"]+"-"+image["fulltag"]+"-"+timestamp2str(image["analyzed_at"])
-                if image_id_tag not in all_images_id_tag or force == True:
-                    risk = {
-                        'critical': 0,
-                        'high': 0,
-                        'medium': 0,
-                        'low': 0,
-                        'negligible': 0,
-                        'unknown': 0
-                    }
-                    affected_package_count = set()
+                try:
+                    # If current analysis concerns a triplet not known locally, or we force sync, init a new local image object
+                    image_id_tag = ""+image["imageId"]+"-"+image["fulltag"]+"-"+timestamp2str(image["analyzed_at"])
+                    if image_id_tag not in all_images_id_tag or force == True:
+                        risk = {
+                            'critical': 0,
+                            'high': 0,
+                            'medium': 0,
+                            'low': 0,
+                            'negligible': 0,
+                            'unknown': 0
+                        }
+                        affected_package_count = set()
 
-                    image["project_name"] = image['fulltag'][
-                                            image['fulltag'].rfind("/") + 1:image['fulltag'].rfind(":")]
+                        image["project_name"] = image['fulltag'][
+                                                image['fulltag'].rfind("/") + 1:image['fulltag'].rfind(":")]
 
-                    image["publisher"] = ""
-                    if image["analysis_status"] == "analyzed":
-                        log.info("synchronizing:%s-%s" % (image["imageId"], image['fulltag']))
-                        resp_vlun = req(ANCHORE_API + "/images/by_id/" + image["imageId"] + "/vuln/all",
-                                        ANCHORE_USERNAME, ANCHORE_PASSWORD)
-                        if resp_vlun:
+                        image["publisher"] = ""
+                        if image["analysis_status"] == "analyzed":
+                            log.info("synchronizing:%s-%s" % (image["imageId"], image['fulltag']))
+                            resp_vlun = req(ANCHORE_API + "/images/by_id/" + image["imageId"] + "/vuln/all",
+                                            ANCHORE_USERNAME, ANCHORE_PASSWORD)
+                            if resp_vlun:
 
-                            # TODO: what does this do ?
-                            dependency_list = []
-                            resp_dependency = req(
-                                GET_DEPENDENCY_API + "/dependency/result/?docker_url=" + image['fulltag'])
+                                # TODO: what does this do ?
+                                dependency_list = []
+                                resp_dependency = req(
+                                    GET_DEPENDENCY_API + "/dependency/result/?docker_url=" + image['fulltag'])
 
-                            if resp_dependency:
-                                dependency_result = base64.b64decode(resp_dependency["result"])
-                                dependency_list = get_parents(dependency_result)
-                                image["publisher"] = resp_dependency["publisher"]
+                                if resp_dependency:
+                                    dependency_result = base64.b64decode(resp_dependency["result"])
+                                    dependency_list = get_parents(dependency_result)
+                                    image["publisher"] = resp_dependency["publisher"]
 
-                            # Manage vulnerabilities 1 by 1
-                            for vlun_item in resp_vlun['vulnerabilities']:
-                                # Add package_name to the set
-                                affected_package_count.add(vlun_item['package_name'])
+                                # Manage vulnerabilities 1 by 1
+                                for vlun_item in resp_vlun['vulnerabilities']:
+                                    # Add package_name to the set
+                                    affected_package_count.add(vlun_item['package_name'])
 
-                                # Get package name
-                                if vlun_item["package_type"] == "java":
-                                    package_name = vlun_item["package_path"][
-                                                   vlun_item["package_path"].rfind('/') + 1:]
-                                    package_name = re.findall(r'(.+)-\d+\.', package_name)
-                                    if len(package_name):
-                                        package_name = package_name[0]
+                                    # Get package name
+                                    if vlun_item["package_type"] == "java":
+                                        package_name = vlun_item["package_path"][
+                                                    vlun_item["package_path"].rfind('/') + 1:]
+                                        package_name = re.findall(r'(.+)-\d+\.', package_name)
+                                        if len(package_name):
+                                            package_name = package_name[0]
+                                        else:
+                                            package_name = re.sub(r'-\d+|\.\d+|\.jar', "", package_name)
+
                                     else:
-                                        package_name = re.sub(r'-\d+|\.\d+|\.jar', "", package_name)
+                                        package_name = vlun_item["package_name"]
+                                    vlun_item["package_name"] = package_name
 
-                                else:
-                                    package_name = vlun_item["package_name"]
-                                vlun_item["package_name"] = package_name
+                                    # Increment corresponding severity
+                                    if vlun_item['severity'] == "Critical":
+                                        risk['critical'] += 1
+                                    elif vlun_item['severity'] == "High":
+                                        risk['high'] += 1
+                                    elif vlun_item['severity'] == "Medium":
+                                        risk['medium'] += 1
+                                    elif vlun_item['severity'] == "Low":
+                                        risk['low'] += 1
+                                    elif vlun_item['severity'] == "Negligible":
+                                        risk['negligible'] += 1
+                                    elif vlun_item['severity'] == "Unknown":
+                                        risk['unknown'] += 1
 
-                                # Increment corresponding severity
-                                if vlun_item['severity'] == "Critical":
-                                    risk['critical'] += 1
-                                elif vlun_item['severity'] == "High":
-                                    risk['high'] += 1
-                                elif vlun_item['severity'] == "Medium":
-                                    risk['medium'] += 1
-                                elif vlun_item['severity'] == "Low":
-                                    risk['low'] += 1
-                                elif vlun_item['severity'] == "Negligible":
-                                    risk['negligible'] += 1
-                                elif vlun_item['severity'] == "Unknown":
-                                    risk['unknown'] += 1
+                                    # TODO: what does this do ?
+                                    for k in dependency_list:
+                                        if vlun_item["package_name"] in k["child"]:
+                                            vlun_item["parents"] = k["parents"]
+                                            vlun_item["group_id"] = k["group_id"]
 
-                                # TODO: what does this do ?
-                                for k in dependency_list:
-                                    if vlun_item["package_name"] in k["child"]:
-                                        vlun_item["parents"] = k["parents"]
-                                        vlun_item["group_id"] = k["group_id"]
+                                    # TODO: what does this do ?
+                                    if vlun_item["fix"] == "None":
 
-                                # TODO: what does this do ?
-                                if vlun_item["fix"] == "None":
+                                        if dependency_list:  # There is a dependency list, and some projects do not use mvn, so there is no dependency list
+                                            try:
+                                                if vlun_item["package_type"] == "java":  # get_version only support java
 
-                                    if dependency_list:  # There is a dependency list, and some projects do not use mvn, so there is no dependency list
-                                        try:
-                                            if vlun_item["package_type"] == "java":  # get_version only support java
+                                                    package_version = get_version(vlun_item["group_id"],
+                                                                                vlun_item["parents"],
+                                                                                image["imageId"])
+                                                    vlun_item["fix"] = package_version["last_version"]
+                                                    vlun_item["second_fix_version"] = package_version["same_version"]
 
-                                                package_version = get_version(vlun_item["group_id"],
-                                                                              vlun_item["parents"],
-                                                                              image["imageId"])
-                                                vlun_item["fix"] = package_version["last_version"]
-                                                vlun_item["second_fix_version"] = package_version["same_version"]
+                                                elif vlun_item["package_type"] == "python":
+                                                    pass
 
-                                            elif vlun_item["package_type"] == "python":
-                                                pass
-
-                                            else:
-                                                log.warning(
-                                                    "[%s][%s]Packet type unhandled：%s" % (
-                                                        vlun_item["package"], vlun_item["package_type"],
-                                                        image["imageId"]))
+                                                else:
+                                                    log.warning(
+                                                        "[%s][%s]Packet type unhandled：%s" % (
+                                                            vlun_item["package"], vlun_item["package_type"],
+                                                            image["imageId"]))
+                                                    vlun_item["fix"] = ""
+                                                    vlun_item["second_fix_version"] = ""
+                                            except Exception as e:
+                                                log.exception(
+                                                    "Error getting version：【%s】%s" % (vlun_item["package"], image["imageId"]))
                                                 vlun_item["fix"] = ""
                                                 vlun_item["second_fix_version"] = ""
-                                        except Exception, e:
-                                            log.exception(
-                                                "Error getting version：【%s】%s" % (vlun_item["package"], image["imageId"]))
-                                            vlun_item["fix"] = ""
-                                            vlun_item["second_fix_version"] = ""
+                                                syncSuccess = False
 
-                            image["affected_package_count"] = len(affected_package_count)
-                            image["vulnerabilities"] = resp_vlun["vulnerabilities"]
-                            image["risk"] = risk
+                                image["affected_package_count"] = len(affected_package_count)
+                                image["vulnerabilities"] = resp_vlun["vulnerabilities"]
+                                image["risk"] = risk
 
                     elif image["analysis_status"] == "analysis_failed":
                         image["vulnerabilities"] = []
                         image["affected_package_count"] = 0
                         image["risk"] = risk
+
                     else:
                         log.info("【Task in scan】created_at=%s,fulltag=%s" % (
                             timestamp2str(image["created_at"]), image["fulltag"]))
 
                     if image["analysis_status"] == "analyzed" or image["analysis_status"] == "analysis_failed":
                         log.info("add image %s-%s" % (image["imageId"], image['fulltag']))
-                        mongo_anchore_result.update_many({"imageId": image["imageId"], "fulltag": image["fulltag"], "fulltag": image["analyzed_at"]}, {"$set": image}, upsert=True)
+                        # TODO: does Upsert makes sense ? Cause with triplets, we add every analysis now
+                        mongo_anchore_result.update_many({"imageId": image["imageId"], "fulltag": image["fulltag"], "analyzed_at": image["analyzed_at"]}, {"$set": image}, upsert=True)
 
+                except Exception as e:
+                    # Log error on image but continue on others
+                    log.exception("Error synchronizing %s" % image["imageId"])
+                    syncSuccess = False
 
-        return True
+        if syncSuccess:
+            return 0
+        else:
+            return 1
     except:
         log.exception("Error synchronizing data")
-    return False
+        return -1
 
 
 if __name__ == '__main__':

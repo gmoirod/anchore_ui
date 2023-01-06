@@ -15,10 +15,13 @@ class Scheduler(object):
         }
 
     def refresh(self):
-        if sync_data():
+        ret = sync_data()
+        if ret==0:
             self.final_result["status"] = "success"
             self.final_result["content"] = "Synchronized data successfully"
-
+        elif ret>0:
+            self.final_result["status"] = "error"
+            self.final_result["content"] = "Some errors encountered"
         else:
             self.final_result["status"] = "error"
             self.final_result["content"] = "Sync data failed"
