@@ -74,6 +74,7 @@ def req(url, user="", pwd=""):
 ##
 def get_vuln_trend(fulltag="", n=5):
     final_result = {
+        "imageId": [],
         "analyzed_at": [],
         "critical": [],
         "high": [],
@@ -88,7 +89,7 @@ def get_vuln_trend(fulltag="", n=5):
 
         if images.count():
             for i in images:
-                final_result["analyzed_at"].insert(0, timestamp2str(i["analyzed_at"]))
+                final_result["analyzed_at"].insert(0, timestamp2str(i["analyzed_at"]) + "\n(" + i["imageId"] + ")")
                 final_result["critical"].insert(0, i["risk"]["critical"])
                 final_result["high"].insert(0, i["risk"]["high"])
                 final_result["medium"].insert(0, i["risk"]["medium"])
@@ -121,6 +122,7 @@ def get_last_analysis(fulltag=""):
         #log.debug("imageId: %s" % lastAnalysis["imageId"])
 
         # Construct DTO
+        images_details["imageId"] = lastAnalysis["imageId"]
         images_details["fulltag"] = lastAnalysis["fulltag"]
         images_details["project_name"] = lastAnalysis["project_name"]
         images_details["total_package"] = {}
