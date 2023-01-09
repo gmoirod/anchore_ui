@@ -99,7 +99,8 @@
                                 <tr>
                                     <th>Vulnerability number</th>
                                     <th>Feed Group</th>
-                                    <th>Vulnerability package name</th>
+                                    <th>Package name</th>
+                                    <th>Package path</th>
                                     <th>Package type</th>
                                     <th>Level</th>
                                     <th>Current version</th>
@@ -118,7 +119,7 @@
                                         {% else %}
                                             <td>{{ vul.package_name }}</td>
                                         {% endif %}
-
+                                        <td>{{ vul.package_path }}</td>
                                         <td>{{ vul.package_type }}</td>
                                         <td>{{ vul.severity }}</td>
                                         <td>{{ vul.package_version }}</td>
