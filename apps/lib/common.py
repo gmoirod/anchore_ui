@@ -125,7 +125,6 @@ def get_last_analysis(fulltag=""):
         images_details["project_name"] = lastAnalysis["project_name"]
         images_details["total_package"] = {}
         images_details["vulnerabilities"] = lastAnalysis["vulnerabilities"]
-        images_details["publisher"] = lastAnalysis["publisher"]
 
         # TODO : Ensure this aggregate packages of LAST analysis
         total_package_sum = mongo_anchore_result.aggregate([
@@ -140,17 +139,6 @@ def get_last_analysis(fulltag=""):
 
         images_details["total_risk"] = lastAnalysis["risk"]
     return images_details
-
-
-def get_pom_file(docker_url=""):
-    result = ""
-    if docker_url:
-        find_result = mongo.conn[MONGO_DB_NAME][MONGO_DEP_COLL].find_one({"docker_url": docker_url})
-        if find_result:
-            result = base64.b64decode(find_result.get("result", ""))
-
-    return result
-
 
 ##
 # Return collection of images grouped by fulltag
@@ -173,8 +161,7 @@ def get_images():
                 "analyzed_at": {"$first": "$analyzed_at"},
                 "affected_package_count": {"$first": "$affected_package_count"},
                 "imageId": {"$first": "$imageId"},
-                "analysis_status": {"$first": "$analysis_status"},
-                "publisher": {"$first": "$publisher"}
+                "analysis_status": {"$first": "$analysis_status"}
             }}
         ])
 
@@ -196,7 +183,6 @@ def get_images():
                 project_result["negligible"] = i["risk"]["negligible"]
                 project_result["unknown"] = i["risk"]["unknown"]
                 project_result["analysis_status"] = i["analysis_status"]
-                project_result["publisher"] = i["publisher"]
                 final_result.append(project_result)
 
             except:
@@ -205,92 +191,6 @@ def get_images():
                 # sync_data(imageId=i["imageId"], force=True)
                 log.exception(i)
     return final_result
-
-
-def get_parents(input_dependency):
-    dependency_list = []
-    ouput = []
-    while True:
-        start = input_dependency.find("[INFO] +-")
-        if start == -1:
-            break
-        end = input_dependency.find("[INFO] +-", start + 10)
-        dependency_list.append(input_dependency[start:end])
-        input_dependency = input_dependency[end:]
-
-    for dependency in dependency_list:
-
-        child_jar = []
-        parents_and_version = ""
-        parents_jar_name = ""
-        group_id = ""
-        match_obj = re.findall(r"- (.+):(.+):(.+):(.+):(.+)", dependency)
-        if match_obj:
-            parents_and_version = ":".join([match_obj[0][1], match_obj[0][3]])
-            group_id = match_obj[0][0]
-            parents_jar_name = match_obj[0][1]
-
-            child_jar = [x[1] for x in match_obj[1:]]
-
-        if len(child_jar) == 0:
-            child_jar = [parents_jar_name]
-        else:
-            child_jar.append(match_obj[0][1])
-
-        ouput.append({"group_id": group_id, "parents": parents_and_version, "child": child_jar})
-    return ouput
-
-
-def format_version(version, point):
-    version_list = version.split(".")
-    return ".".join(version_list[:point]) + "."
-
-
-def get_version(group_id, package, image_id):
-    package_version = {
-        "last_version": "",
-        "same_version": ""
-    }
-    package_name, current_package_version = package.split(":")
-    if current_package_version.count(".") in [2, 3]:  # 8.0.28 or 2.2.2.RELEASE
-
-        current_package_version = format_version(current_package_version, 2)
-
-    elif current_package_version.count("-") == 1:
-        current_package_version = current_package_version[:current_package_version.find("-")]
-    else:
-        log.info("unhandled version number:%s image_id=%s" % (package, image_id))
-
-    if fix_version.has_key(package_name):
-        log.debug("The version found for %s is %s" % (package_name, fix_version[package_name]))
-        package_version = fix_version[package_name]
-    else:
-        while True:
-
-            url = "https://mvnrepository.com/artifact/%s/%s" % (group_id, package_name)
-            log.debug(url)
-
-            resp = retry_get(url=url, verify=False)
-            if resp.status_code == 403:
-                log.info("Find package exceptions，status=%s" % resp.status_code)
-                time.sleep(5)
-            elif resp.status_code == 404:
-                fix_version[package_name] = package_version
-                break
-            else:
-                version_list = re.findall(r'class="vbtn release">(.+?)</a>', resp.text)
-                if version_list:
-                    for version_item in version_list:
-                        if version_item.startswith(current_package_version):
-                            package_version["same_version"] = version_item
-                            break
-
-                    package_version["last_version"] = version_list[0]
-                    fix_version[package_name] = package_version
-                    break
-
-    return package_version
-
 
 ##
 # Retrieve new analysis and stores them in Mongo
@@ -341,22 +241,11 @@ def sync_data(imageId=None, force=False):
                         image["project_name"] = image['fulltag'][
                                                 image['fulltag'].rfind("/") + 1:image['fulltag'].rfind(":")]
 
-                        image["publisher"] = ""
                         if image["analysis_status"] == "analyzed":
                             log.info("synchronizing:%s-%s" % (image["imageId"], image['fulltag']))
                             resp_vlun = req(ANCHORE_API + "/images/by_id/" + image["imageId"] + "/vuln/all",
                                             ANCHORE_USERNAME, ANCHORE_PASSWORD)
                             if resp_vlun:
-
-                                # TODO: what does this do ?
-                                dependency_list = []
-                                resp_dependency = req(
-                                    GET_DEPENDENCY_API + "/dependency/result/?docker_url=" + image['fulltag'])
-
-                                if resp_dependency:
-                                    dependency_result = base64.b64decode(resp_dependency["result"])
-                                    dependency_list = get_parents(dependency_result)
-                                    image["publisher"] = resp_dependency["publisher"]
 
                                 # Manage vulnerabilities 1 by 1
                                 for vlun_item in resp_vlun['vulnerabilities']:
@@ -376,42 +265,6 @@ def sync_data(imageId=None, force=False):
                                         risk['negligible'] += 1
                                     elif vlun_item['severity'] == "Unknown":
                                         risk['unknown'] += 1
-
-                                    # TODO: what does this do ?
-                                    for k in dependency_list:
-                                        if vlun_item["package_name"] in k["child"]:
-                                            vlun_item["parents"] = k["parents"]
-                                            vlun_item["group_id"] = k["group_id"]
-
-                                    # TODO: what does this do ?
-                                    if vlun_item["fix"] == "None":
-
-                                        if dependency_list:  # There is a dependency list, and some projects do not use mvn, so there is no dependency list
-                                            try:
-                                                if vlun_item["package_type"] == "java":  # get_version only support java
-
-                                                    package_version = get_version(vlun_item["group_id"],
-                                                                                vlun_item["parents"],
-                                                                                image["imageId"])
-                                                    vlun_item["fix"] = package_version["last_version"]
-                                                    vlun_item["second_fix_version"] = package_version["same_version"]
-
-                                                elif vlun_item["package_type"] == "python":
-                                                    pass
-
-                                                else:
-                                                    log.warning(
-                                                        "[%s][%s]Packet type unhandled：%s" % (
-                                                            vlun_item["package"], vlun_item["package_type"],
-                                                            image["imageId"]))
-                                                    vlun_item["fix"] = ""
-                                                    vlun_item["second_fix_version"] = ""
-                                            except Exception as e:
-                                                log.exception(
-                                                    "Error getting version：【%s】%s" % (vlun_item["package"], image["imageId"]))
-                                                vlun_item["fix"] = ""
-                                                vlun_item["second_fix_version"] = ""
-                                                syncSuccess = False
 
                                 image["affected_package_count"] = len(affected_package_count)
                                 image["vulnerabilities"] = resp_vlun["vulnerabilities"]

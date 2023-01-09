@@ -71,7 +71,6 @@
                                     <th>Last analysis</th>
                                     <th>Image id</th>
                                     <th>Analysis status</th>
-                                    <th>Publisher</th>
                                 </tr>
                             </thead>
 
@@ -98,10 +97,6 @@
                                     <td>{{ item['analyzed_at'] }}</td>
                                     <td class="nowrap">{{ item['imageId'] }}</td>
                                     <td>{{ item['analysis_status'] }}</td>
-                                    <td>
-                                        <span data-toggle="tooltip" data-placement="left"
-                                            title="{{ item['publisher'] }}">{{ item['publisher'] }}</span>
-                                    </td>
                                 </tr>
                             {% endfor %}
                             </tbody>
@@ -161,8 +156,7 @@
                     { width: '5%' },
                     { width: '5%' },
                     { width: '10%' },
-                    { width: '10%' },
-                    { width: '5%' },
+                    { width: '15%' },
                     { width: '5%' }
                 ] 
             });

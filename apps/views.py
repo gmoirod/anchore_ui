@@ -10,12 +10,10 @@ from . import app, csrf, apscheduler
 from lib.login import login_check
 from lib import common
 from lib.scheduler import Scheduler
-from lib.dependency import Dependency
 
 reload(sys)
 sys.setdefaultencoding('utf8')
 scheduler = Scheduler()
-dependency = Dependency()
 
 
 @app.template_filter(name='unicode2str')
@@ -54,15 +52,14 @@ def images_details():
         )
 
     vuln_trend = common.get_vuln_trend(fulltag)
-    pom_file = common.get_pom_file(fulltag)
     if request.path == "/images_details":
         return render_template('images_details.html', vuln_trend=vuln_trend,
                                total_risk=total_risk, total_package=total_package, analysis_date=analysis_date,
-                               resp=resp, fulltag=fulltag, pom_file=pom_file)
+                               resp=resp, fulltag=fulltag)
     else:
         return render_template('tmp_link.html', vuln_trend=vuln_trend,
                                total_risk=total_risk, total_package=total_package, analysis_date=analysis_date,
-                               resp=resp, fulltag=fulltag, pom_file=pom_file)
+                               resp=resp, fulltag=fulltag)
 
 
 # Analysis Page
@@ -110,16 +107,6 @@ def images_sync():
     else:
         resp = scheduler.get()
         return render_template('images_sync.html', resp=resp["data"])
-
-
-@app.route('/dependency/result/', methods=['GET', 'POST'], strict_slashes=False)
-def dependency_result():
-
-    if request.method == "POST":
-        return dumps(dependency.save(request.get_json()))
-    else:
-        return dumps(dependency.get(request.args.get("docker_url", "")))
-
 
 @app.route("/logout")
 @login_check

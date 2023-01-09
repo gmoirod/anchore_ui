@@ -32,7 +32,6 @@
                 </div>
                 <div class="panel-body">
                     <span class="label label-success">project：{{ resp.project_name }}</span>
-                    <span class="label label-success">announcer：{{ resp.publisher }}</span>
                     <span class="label label-success">docker image：{{ resp.fulltag }}</span>
                 </div>
             </div>
@@ -93,14 +92,12 @@
                                 <thead>
                                 <tr>
                                     <th>Vulnerability number</th>
+                                    <th>Feed Group</th>
                                     <th>Vulnerability package name</th>
-                                    <th>Current version</th>
                                     <th>Package type</th>
                                     <th>Level</th>
-                                    <th>Parent dependency package</th>
-                                    <th>Upgrade to latest version</th>
-                                    <th>Upgrade to the same version</th>
-{#                                  <th>Number of POCs</th> #}
+                                    <th>Current version</th>
+                                    <th>Fix version</th>
                                 </tr>
                                 </thead>
                                 <tbody>
@@ -109,21 +106,17 @@
                                 {% for vul in resp.vulnerabilities %}
                                     <tr>
                                         <td><b><a href="{{ vul.url }}" target="_Blank">{{ vul.vuln }}</a></b></td>
+                                        <td>{{ vul.feed_group }}</td>
                                         {% if  vul.package_type == 'java' %}
                                             <td>{{ vul.package_name }}</td>
                                         {% else %}
                                             <td>{{ vul.package_name }}</td>
                                         {% endif %}
 
-                                        <td>{{ vul.package_version }}</td>
                                         <td>{{ vul.package_type }}</td>
                                         <td>{{ vul.severity }}</td>
-                                        <td>{{ vul.parents }}</td>
+                                        <td>{{ vul.package_version }}</td>
                                         <td>{{ vul.fix }}</td>
-                                        <td>{{ vul.second_fix_version }}</td>
-                                        <td>{{ vul.poc_count }}</td>
-
-
                                     </tr>
                                 {% endfor %}
 

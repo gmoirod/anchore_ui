@@ -13,10 +13,10 @@
 
 ## Features
 
-* Provide version numbers of jar package patches (only severe and high-risk vulnerabilities version numbers are provided).
+* Integrate anchor analysis results by tag
+* Display trend over time for a given tag
+* Display statistics (severity, packages) for a given tag
 * Export vulnerabilities to excel files
-* Integrate anchor analysis results
-* Show dependencies (only maven is supported at the moment)
 
 ## Install guide
 
