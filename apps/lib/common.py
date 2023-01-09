@@ -363,20 +363,6 @@ def sync_data(imageId=None, force=False):
                                     # Add package_name to the set
                                     affected_package_count.add(vlun_item['package_name'])
 
-                                    # Get package name
-                                    if vlun_item["package_type"] == "java":
-                                        package_name = vlun_item["package_path"][
-                                                    vlun_item["package_path"].rfind('/') + 1:]
-                                        package_name = re.findall(r'(.+)-\d+\.', package_name)
-                                        if len(package_name):
-                                            package_name = package_name[0]
-                                        else:
-                                            package_name = re.sub(r'-\d+|\.\d+|\.jar', "", package_name)
-
-                                    else:
-                                        package_name = vlun_item["package_name"]
-                                    vlun_item["package_name"] = package_name
-
                                     # Increment corresponding severity
                                     if vlun_item['severity'] == "Critical":
                                         risk['critical'] += 1
