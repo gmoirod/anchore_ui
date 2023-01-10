@@ -69,8 +69,8 @@
                                     <th>Negligible</th>
                                     <th>Unknown</th>
                                     <th>Last analysis</th>
-                                    <th>Image id</th>
-                                    <th>Analysis status</th>
+                                    <th>Last Evaluation</th>
+                                    <th>Last Evaluation Status</th>
                                 </tr>
                             </thead>
 
@@ -95,8 +95,8 @@
                                     <td>{{ item['negligible'] }}</td>
                                     <td>{{ item['unknown'] }}</td>
                                     <td>{{ item['analyzed_at'] }}</td>
-                                    <td class="nowrap">{{ item['imageId'] }}</td>
-                                    <td>{{ item['analysis_status'] }}</td>
+                                    <td>{{ item['last_evaluation'] }}</td>
+                                    <td>{{ item['eval_status'] }}</td>
                                 </tr>
                             {% endfor %}
                             </tbody>
@@ -156,8 +156,8 @@
                     { width: '5%' },
                     { width: '5%' },
                     { width: '10%' },
-                    { width: '15%' },
-                    { width: '5%' }
+                    { width: '10%' },
+                    { width: '10%' }
                 ] 
             });
         });

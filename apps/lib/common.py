@@ -152,30 +152,86 @@ def get_images():
     images = mongo_anchore_result.find()
     if images.count():
 
-        # Group by fulltag
+        # Sort by analyzed_at, then Group by fulltag
         images_analysis = mongo_anchore_result.aggregate([
-            # sort DESC
-            {"$sort": {"analyzed_at": -1}},   # Null value possible when analysis_failed, but it will appear last
-            # then group by fulltag, taking 1st repeting element
-            {"$group": {
-                "_id": "$fulltag",
-                "risk": {"$first": "$risk"},
-                "analyzed_at": {"$first": "$analyzed_at"},
-                "affected_package_count": {"$first": "$affected_package_count"},
-                "imageId": {"$first": "$imageId"},
-                "analysis_status": {"$first": "$analysis_status"}
-            }}
+            # Explode 'evaluations' (image can have 0 evaluations)
+            {
+                "$unwind" : {
+                    "path" : "$evaluations",
+                    "preserveNullAndEmptyArrays" : True
+                }
+            }, 
+            # Convert evaluations.last_evaluation from string to seconds from epoch
+            {
+                "$addFields" : {
+                    "lastEvaluationDate" : {
+                        "$divide" : [
+                            {
+                                "$convert" : {
+                                    "input" : {
+                                        "$toDate" : "$evaluations.last_evaluation"
+                                    },
+                                    "to" : "double"
+                                }
+                            },
+                            1000.0
+                        ]
+                    }
+                }
+            },
+            # Sort by last analyzed_at then last last_evaluation
+            {
+                "$sort" : {
+                    "analyzed_at" : -1.0,
+                    "lastEvaluationDate" : -1.0
+                }
+            },
+            # Group by fulltag, get 1st tuple
+            {
+                "$group" : {
+                    "_id" : "$fulltag",
+                    "analyzed_at" : {
+                        "$first" : "$analyzed_at"
+                    },
+                    "last_evaluation" : {
+                        "$first" : "$lastEvaluationDate"
+                    },
+                    "id" : {
+                        "$first" : "$_id"
+                    },
+                    "risk" : {
+                        "$first" : "$risk"
+                    },
+                    "affected_package_count" : {
+                        "$first" : "$affected_package_count"
+                    },
+                    "imageId" : {
+                        "$first" : "$imageId"
+                    },
+                    "analysis_status" : {
+                        "$first" : "$analysis_status"
+                    },
+                    "eval_status" : {
+                        "$first" : "$evaluations.status"
+                    }
+                }
+            }
         ])
 
         # Construct DTOs
         for i in images_analysis:
+
             #log.debug("Image %s, id %s" % (i["_id"], i["imageId"]))
+            #log.debug("Last evaluation %s" % timestamp2str(i["last_evaluation"]))
+
             project_result = {}
             try:
 
                 project_result["affected_package_count"] = i.get("affected_package_count", "")
                 project_result["fulltag"] = i["_id"]
                 project_result["analyzed_at"] = timestamp2str(i["analyzed_at"])
+                project_result["last_evaluation"] = timestamp2str(i["last_evaluation"])
+                project_result["eval_status"] = i["eval_status"]
                 project_result["imageId"] = i["imageId"]
 
                 project_result["critical"] = i["risk"]["critical"]
@@ -227,6 +283,7 @@ def sync_data(force=False):
                     image["risk"] = risk
                     image["vulnerabilities"] = []
                     image["affected_package_count"] = 0
+                    image["evaluations"] = []
                     affected_package_count = set()
                     # Extract project name
                     image["project_name"] = image['fulltag'][
@@ -265,6 +322,15 @@ def sync_data(force=False):
                             image["vulnerabilities"] = resp_vlun["vulnerabilities"]
                             image["affected_package_count"] = len(affected_package_count)                        
                             image["risk"] = risk
+
+                        ####################################################################################
+                        # Get all evaluations (evaluations can appear even without new analysis)
+                        evaluations = req(ANCHORE_API + "/images/by_id/" + image["imageId"] + "/check?tag="+image["fulltag"],
+                                        ANCHORE_USERNAME, ANCHORE_PASSWORD)
+                        if evaluations:                        
+                            evaluation_list = evaluations[0][image["imageDigest"]][image["fulltag"]]
+                            #log.debug(evaluation_list)
+                            image["evaluations"] = evaluation_list
 
                     ####################################################################################
                     # Persist if analysis is OK or KO, not pending
