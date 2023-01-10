@@ -19,7 +19,6 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
-
     </style>
     {#    <link rel="stylesheet" href="http://cdn.datatables.net/1.10.19/css/jquery.dataTables.min.css">#}
 {% endblock %}
@@ -96,7 +95,17 @@
                                     <td>{{ item['unknown'] }}</td>
                                     <td>{{ item['analyzed_at'] }}</td>
                                     <td>{{ item['last_evaluation'] }}</td>
-                                    <td>{{ item['eval_status'] }}</td>
+                                    <td align='center'>
+                                        <h4 style="margin-top: 0px; margin-bottom: 0px;">
+                                    {% if item['eval_status'] == 'pass' %}                                        
+                                            <span class="label label-success">{{ item['eval_status'] }}</span>
+                                    {% elif item['eval_status'] == 'fail' %}
+                                            <span class="label label-danger">{{ item['eval_status'] }}</span>
+                                    {% else %}
+                                            <span class="label label-info">{{ item['eval_status'] }}</span>
+                                    {% endif %}
+                                        </h4>
+                                    </td>
                                 </tr>
                             {% endfor %}
                             </tbody>
@@ -147,7 +156,7 @@
                 searching: true,
                 autoWidth: false,
                 columns: [
-                    { width: '35%' },
+                    { width: '40%' },
                     { width: '5%' },
                     { width: '5%' },
                     { width: '5%' },
@@ -157,7 +166,7 @@
                     { width: '5%' },
                     { width: '10%' },
                     { width: '10%' },
-                    { width: '10%' }
+                    { width: '5%' }
                 ] 
             });
         });
