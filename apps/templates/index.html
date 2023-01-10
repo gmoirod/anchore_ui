@@ -67,7 +67,7 @@
                                     <th>Low</th>
                                     <th>Negligible</th>
                                     <th>Unknown</th>
-                                    <th>Last analysis</th>
+                                    <th>Last Image Add</th>
                                     <th>Last Evaluation</th>
                                     <th>Last Evaluation Status</th>
                                 </tr>
@@ -83,7 +83,6 @@
                                               title="{{ item['fulltag'] }}"><a href="/images_details?fulltag={{ item['fulltag'] }}"
                                               target="_Blank">{{ item['fulltag'] }}</a></span>
                                             
-                                             <!--  {{ item['fulltag'] }}  -->
                                         </b>
                                     </td>
                                     <td>{{ item['affected_package_count'] }}</td>
@@ -93,17 +92,19 @@
                                     <td>{{ item['low'] }}</td>
                                     <td>{{ item['negligible'] }}</td>
                                     <td>{{ item['unknown'] }}</td>
-                                    <td>{{ item['analyzed_at'] }}</td>
+                                    <td>{{ item['created_at'] }}</td>
                                     <td>{{ item['last_evaluation'] }}</td>
                                     <td align='center'>
                                         <h4 style="margin-top: 0px; margin-bottom: 0px;">
-                                    {% if item['eval_status'] == 'pass' %}                                        
+                                            <span data-toggle="tooltip" data-placement="left" title="{{ item['analysis_status'] }}">
+                                    {% if item['eval_status'] == 'pass' %}
                                             <span class="label label-success">{{ item['eval_status'] }}</span>
                                     {% elif item['eval_status'] == 'fail' %}
                                             <span class="label label-danger">{{ item['eval_status'] }}</span>
                                     {% else %}
                                             <span class="label label-info">{{ item['eval_status'] }}</span>
                                     {% endif %}
+                                            </span>
                                         </h4>
                                     </td>
                                 </tr>

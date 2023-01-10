@@ -38,7 +38,7 @@ def images_details():
 
     fulltag = request.args.get('fulltag', '')
 
-    resp = common.get_last_analysis(fulltag)
+    resp = common.get_last_image_analysis(fulltag)
     total_risk.append({"name": 'Critical', "value": resp['total_risk']['critical']})
     total_risk.append({"name": 'High', "value": resp['total_risk']['high']})
     total_risk.append({"name": 'Medium', "value": resp['total_risk']['medium']})

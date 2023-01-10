@@ -75,7 +75,7 @@ def req(url, user="", pwd=""):
 def get_vuln_trend(fulltag="", n=5):
     final_result = {
         "imageId": [],
-        "analyzed_at": [],
+        "created_at": [],
         "critical": [],
         "high": [],
         "low": [],
@@ -85,11 +85,11 @@ def get_vuln_trend(fulltag="", n=5):
 
     }
     try:
-        images = mongo.conn[MONGO_DB_NAME][MONGO_SCAN_RESULT_COLL].find({"fulltag": fulltag}).sort("analyzed_at", -1).limit(n)
+        images = mongo.conn[MONGO_DB_NAME][MONGO_SCAN_RESULT_COLL].find({"fulltag": fulltag}).sort("created_at", -1).limit(n)
 
         if images.count():
             for i in images:
-                final_result["analyzed_at"].insert(0, timestamp2str(i["analyzed_at"]) + "\n(" + i["imageId"] + ")")
+                final_result["created_at"].insert(0, timestamp2str(i["created_at"]) + "\n(" + i["imageId"] + ")")
                 final_result["critical"].insert(0, i["risk"]["critical"])
                 final_result["high"].insert(0, i["risk"]["high"])
                 final_result["medium"].insert(0, i["risk"]["medium"])
@@ -108,29 +108,29 @@ def validate_is_dict(option, value):
         raise TypeError("%s must be an instance of dict" % (option,))
 
 ##
-# Return last analysis of given image
+# Return last image analysis
 ##
-def get_last_analysis(fulltag=""):
-    #log.debug("get_last_analysis(%s)" % fulltag)
+def get_last_image_analysis(fulltag=""):
+    #log.debug("get_last_image_analysis(%s)" % fulltag)
     images_details = {}
 
     mongo_anchore_result = mongo.conn[MONGO_DB_NAME][MONGO_SCAN_RESULT_COLL]
     # Find last image analysis
-    lastAnalysis = mongo_anchore_result.find_one(filter={"fulltag": fulltag}, sort=[("analyzed_at", -1)])
+    lastImageAnalysis = mongo_anchore_result.find_one(filter={"fulltag": fulltag}, sort=[("created_at", -1)])
 
-    if lastAnalysis:
-        #log.debug("imageId: %s" % lastAnalysis["imageId"])
+    if lastImageAnalysis:
+        #log.debug("imageId: %s" % lastImageAnalysis["imageId"])
 
         # Construct DTO
-        images_details["imageId"] = lastAnalysis["imageId"]
-        images_details["fulltag"] = lastAnalysis["fulltag"]
-        images_details["project_name"] = lastAnalysis["project_name"]
+        images_details["imageId"] = lastImageAnalysis["imageId"]
+        images_details["fulltag"] = lastImageAnalysis["fulltag"]
+        images_details["project_name"] = lastImageAnalysis["project_name"]
         images_details["total_package"] = {}
-        images_details["vulnerabilities"] = lastAnalysis["vulnerabilities"]
+        images_details["vulnerabilities"] = lastImageAnalysis["vulnerabilities"]
 
-        # TODO : Ensure this aggregate packages of LAST analysis
+        # Aggregate packages of LAST image analysis
         total_package_sum = mongo_anchore_result.aggregate([
-            {'$match': {'_id': lastAnalysis["_id"]}},
+            {'$match': {'_id': lastImageAnalysis["_id"]}},
             {"$unwind": "$vulnerabilities"},
             {"$group": {"_id": "$vulnerabilities.package_name", "sum": {"$sum": 1}}},
             {"$sort": {"sum": -1}},
@@ -139,11 +139,11 @@ def get_last_analysis(fulltag=""):
         for i in total_package_sum:
             images_details["total_package"][i["_id"]] = i["sum"]
 
-        images_details["total_risk"] = lastAnalysis["risk"]
+        images_details["total_risk"] = lastImageAnalysis["risk"]
     return images_details
 
 ##
-# Return collection of images grouped by fulltag
+# Return collection of images grouped by fulltag and giving last image analysis summary and evaluation status
 ##
 def get_images():
     final_result = []
@@ -164,12 +164,13 @@ def get_images():
             # Convert evaluations.last_evaluation from string to seconds from epoch
             {
                 "$addFields" : {
-                    "lastEvaluationDate" : {
+                    "last_evaluation" : {
                         "$divide" : [
                             {
                                 "$convert" : {
                                     "input" : {
-                                        "$toDate" : "$evaluations.last_evaluation"
+                                        "$toDate" :
+                                            "$evaluations.last_evaluation"
                                     },
                                     "to" : "double"
                                 }
@@ -179,25 +180,22 @@ def get_images():
                     }
                 }
             },
-            # Sort by last analyzed_at then last last_evaluation
+            # Sort by created_at DESC then last last_evaluation DESC
             {
                 "$sort" : {
-                    "analyzed_at" : -1.0,
-                    "lastEvaluationDate" : -1.0
+                    "created_at" : -1,
+                    "last_evaluation" : -1
                 }
             },
             # Group by fulltag, get 1st tuple
             {
                 "$group" : {
                     "_id" : "$fulltag",
-                    "analyzed_at" : {
-                        "$first" : "$analyzed_at"
+                    "created_at" : {
+                        "$first" : "$created_at"
                     },
                     "last_evaluation" : {
-                        "$first" : "$lastEvaluationDate"
-                    },
-                    "id" : {
-                        "$first" : "$_id"
+                        "$first" : "$last_evaluation"
                     },
                     "risk" : {
                         "$first" : "$risk"
@@ -205,14 +203,11 @@ def get_images():
                     "affected_package_count" : {
                         "$first" : "$affected_package_count"
                     },
-                    "imageId" : {
-                        "$first" : "$imageId"
+                    "eval_status" : {
+                        "$first" : "$evaluations.status"
                     },
                     "analysis_status" : {
                         "$first" : "$analysis_status"
-                    },
-                    "eval_status" : {
-                        "$first" : "$evaluations.status"
                     }
                 }
             }
@@ -221,18 +216,18 @@ def get_images():
         # Construct DTOs
         for i in images_analysis:
 
-            #log.debug("Image %s, id %s" % (i["_id"], i["imageId"]))
-            #log.debug("Last evaluation %s" % timestamp2str(i["last_evaluation"]))
+            #log.debug("Image %s" % i["_id"])
 
             project_result = {}
             try:
 
                 project_result["affected_package_count"] = i.get("affected_package_count", "")
                 project_result["fulltag"] = i["_id"]
-                project_result["analyzed_at"] = timestamp2str(i["analyzed_at"])
+                project_result["created_at"] = timestamp2str(i["created_at"])
                 project_result["last_evaluation"] = timestamp2str(i["last_evaluation"])
                 project_result["eval_status"] = i["eval_status"]
-                project_result["imageId"] = i["imageId"]
+                project_result["analysis_status"] = i["analysis_status"]
+
 
                 project_result["critical"] = i["risk"]["critical"]
                 project_result["high"] = i["risk"]["high"]
@@ -240,13 +235,9 @@ def get_images():
                 project_result["low"] = i["risk"]["low"]
                 project_result["negligible"] = i["risk"]["negligible"]
                 project_result["unknown"] = i["risk"]["unknown"]
-                project_result["analysis_status"] = i["analysis_status"]
                 final_result.append(project_result)
 
             except:
-                # TODO : do we sync by imageid or fulltag ?
-                executor.submit(sync_data, imageId=i["imageId"], force=True)
-                # sync_data(imageId=i["imageId"], force=True)
                 log.exception(i)
     return final_result
 
@@ -257,10 +248,7 @@ def get_images():
 def sync_data(force=False):
     try:
         syncSuccess = True
-
         mongo_anchore_result = mongo.conn[MONGO_DB_NAME][MONGO_SCAN_RESULT_COLL]
-        # Get all images in local db
-        all_local_images = mongo_anchore_result.find({}, {"imageId": 1, "fulltag": 1, "analyzed_at": 1})
 
         # List all pairs (imageId, fulltag) in Anchore visible to the user
         anchore_summaries = req(ANCHORE_API + "/summaries/imagetags", ANCHORE_USERNAME, ANCHORE_PASSWORD)
