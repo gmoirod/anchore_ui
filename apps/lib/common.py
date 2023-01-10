@@ -198,98 +198,86 @@ def get_images():
 # Retrieve new analysis and stores them in Mongo
 # return: 0 if ok, -1 if fails, 1 if some non fatal errors
 ##
-def sync_data(imageId=None, force=False):
+def sync_data(force=False):
     try:
         syncSuccess = True
 
         mongo_anchore_result = mongo.conn[MONGO_DB_NAME][MONGO_SCAN_RESULT_COLL]
-        # Get all images in local db sorted by created_at DESCENDING
-        all_images = mongo_anchore_result.find({}, {"imageId": 1, "fulltag": 1, "analyzed_at": 1}, sort=[('created_at', -1)])
+        # Get all images in local db
+        all_local_images = mongo_anchore_result.find({}, {"imageId": 1, "fulltag": 1, "analyzed_at": 1})
 
-        # List all image tags in Anchore visible to the user
-        resp_summaries = req(ANCHORE_API + "/summaries/imagetags", ANCHORE_USERNAME, ANCHORE_PASSWORD)
+        # List all pairs (imageId, fulltag) in Anchore visible to the user
+        anchore_summaries = req(ANCHORE_API + "/summaries/imagetags", ANCHORE_USERNAME, ANCHORE_PASSWORD)
 
-        if resp_summaries:
-            if imageId:
-                # In case of sync a specific image, filter out wanted images from Anchore results
-                for resp_dict in resp_summaries:
-                    if resp_dict["imageId"] == imageId:
-                        resp_summaries = [resp_dict]
-                        break
-                else:
-                    return 0
-
-            # Retain a list of known images in local db (triplet imageid/fulltag/analyzed_at)
-            # We want all fulltag and all images for this tag to get a trend by tag
-            # And an analysis can be forced and so will get a new analyzed_at
-            all_images_id_tag = map(lambda x: x["imageId"]+"-"+x["fulltag"]+"-"+timestamp2str(x["analyzed_at"]), all_images)
+        if anchore_summaries:
 
             # Loop on Anchore results
-            for image in resp_summaries:
+            for image in anchore_summaries:
                 try:
-                    # If current analysis concerns a triplet not known locally, or we force sync, init a new local image object
-                    image_id_tag = ""+image["imageId"]+"-"+image["fulltag"]+"-"+timestamp2str(image["analyzed_at"])
-                    if image_id_tag not in all_images_id_tag or force == True:
-                        risk = {
-                            'critical': 0,
-                            'high': 0,
-                            'medium': 0,
-                            'low': 0,
-                            'negligible': 0,
-                            'unknown': 0
-                        }
-                        affected_package_count = set()
+                    log.info("synchronizing: %s-%s" % (image["imageId"], image['fulltag']))
+                    # Init an empty risk
+                    risk = {
+                        'critical': 0,
+                        'high': 0,
+                        'medium': 0,
+                        'low': 0,
+                        'negligible': 0,
+                        'unknown': 0
+                    }
+                    image["risk"] = risk
+                    image["vulnerabilities"] = []
+                    image["affected_package_count"] = 0
+                    affected_package_count = set()
+                    # Extract project name
+                    image["project_name"] = image['fulltag'][
+                                            image['fulltag'].rfind("/") + 1:image['fulltag'].rfind(":")]
 
-                        image["project_name"] = image['fulltag'][
-                                                image['fulltag'].rfind("/") + 1:image['fulltag'].rfind(":")]
+                    # If current analysis is failed, drop last analysis date (if a previous date was set, Anchore let it)
+                    if image["analysis_status"] == "analysis_failed":
+                        image["analyzed_at"] = None
 
-                        if image["analysis_status"] == "analyzed":
-                            log.info("synchronizing:%s-%s" % (image["imageId"], image['fulltag']))
-                            resp_vlun = req(ANCHORE_API + "/images/by_id/" + image["imageId"] + "/vuln/all",
-                                            ANCHORE_USERNAME, ANCHORE_PASSWORD)
-                            if resp_vlun:
+                    # New triplet is in status "analyzed" ? => Get vulns and evaluations
+                    if image["analysis_status"] == "analyzed":
+                        ####################################################################################
+                        # Get all vulns
+                        resp_vlun = req(ANCHORE_API + "/images/by_id/" + image["imageId"] + "/vuln/all",
+                                        ANCHORE_USERNAME, ANCHORE_PASSWORD)
+                        if resp_vlun:
+                            # Manage vulnerabilities 1 by 1
+                            for vlun_item in resp_vlun['vulnerabilities']:
+                                # Add package_name to the set
+                                affected_package_count.add(vlun_item['package_name'])
 
-                                # Manage vulnerabilities 1 by 1
-                                for vlun_item in resp_vlun['vulnerabilities']:
-                                    # Add package_name to the set
-                                    affected_package_count.add(vlun_item['package_name'])
+                                # Increment corresponding severity
+                                if vlun_item['severity'] == "Critical":
+                                    risk['critical'] += 1
+                                elif vlun_item['severity'] == "High":
+                                    risk['high'] += 1
+                                elif vlun_item['severity'] == "Medium":
+                                    risk['medium'] += 1
+                                elif vlun_item['severity'] == "Low":
+                                    risk['low'] += 1
+                                elif vlun_item['severity'] == "Negligible":
+                                    risk['negligible'] += 1
+                                elif vlun_item['severity'] == "Unknown":
+                                    risk['unknown'] += 1
 
-                                    # Increment corresponding severity
-                                    if vlun_item['severity'] == "Critical":
-                                        risk['critical'] += 1
-                                    elif vlun_item['severity'] == "High":
-                                        risk['high'] += 1
-                                    elif vlun_item['severity'] == "Medium":
-                                        risk['medium'] += 1
-                                    elif vlun_item['severity'] == "Low":
-                                        risk['low'] += 1
-                                    elif vlun_item['severity'] == "Negligible":
-                                        risk['negligible'] += 1
-                                    elif vlun_item['severity'] == "Unknown":
-                                        risk['unknown'] += 1
+                            image["vulnerabilities"] = resp_vlun["vulnerabilities"]
+                            image["affected_package_count"] = len(affected_package_count)                        
+                            image["risk"] = risk
 
-                                image["affected_package_count"] = len(affected_package_count)
-                                image["vulnerabilities"] = resp_vlun["vulnerabilities"]
-                                image["risk"] = risk
-
-                    elif image["analysis_status"] == "analysis_failed":
-                        image["vulnerabilities"] = []
-                        image["affected_package_count"] = 0
-                        image["risk"] = risk
-
-                    else:
-                        log.info("【Task in scan】created_at=%s,fulltag=%s" % (
-                            timestamp2str(image["created_at"]), image["fulltag"]))
-
+                    ####################################################################################
+                    # Persist if analysis is OK or KO, not pending
                     if image["analysis_status"] == "analyzed" or image["analysis_status"] == "analysis_failed":
-                        log.info("add image %s-%s" % (image["imageId"], image['fulltag']))
-                        # TODO: does Upsert makes sense ? Cause with triplets, we add every analysis now
-                        mongo_anchore_result.update_many({"imageId": image["imageId"], "fulltag": image["fulltag"], "analyzed_at": image["analyzed_at"]}, {"$set": image}, upsert=True)
+                        # Insert or update, use pair (imageId, fulltag) as key
+                        mongo_anchore_result.update_many({"imageId": image["imageId"], "fulltag": image["fulltag"]}, {"$set": image}, upsert=True)
+                        log.info("synced image: %s-%s" % (image["imageId"], image['fulltag']))                            
 
                 except Exception as e:
                     # Log error on image but continue on others
                     log.exception("Error synchronizing %s" % image["imageId"])
                     syncSuccess = False
+            # end loop
 
         if syncSuccess:
             return 0
@@ -298,8 +286,3 @@ def sync_data(imageId=None, force=False):
     except:
         log.exception("Error synchronizing data")
         return -1
-
-
-if __name__ == '__main__':
-    sync_data("9f55d67f883db748711d661a477f714ce330eccf303710c3ddc0fdbca1e39e1a")
-    # get_version("spring-boot-starter-validation:1.5.9.RELEASE")
