@@ -3,6 +3,8 @@
 import os
 from apscheduler.jobstores.mongodb import MongoDBJobStore
 
+DEBUG = os.getenv("DEBUG", "False")
+
 # Configuration related to mongodb according to the actual situation
 MONGO_IP = os.getenv("MONGO_IP", "192.168.1.1")
 MONGO_PORT = int(os.getenv("MONGO_PORT", 27017))
@@ -18,7 +20,7 @@ UI_USERNAME = os.getenv("UI_USERNAME", "user")
 UI_PASSWORD = os.getenv("UI_PASSWORD", "user")
 
 # The following configurations can be kept as default
-MONGO_DB_NAME = os.getenv("MONGO_DB_NAME", "images_scan")
+MONGO_DB_NAME = os.getenv("MONGO_DB_NAME", "anchore")
 MONGO_SCAN_RESULT_COLL = os.getenv("MONGO_SCAN_RESULT_COLL", "anchore_result")
 WEB_IP = "0.0.0.0"
 WEB_PORT = 8888
@@ -66,8 +68,8 @@ class Config(object):
     WTF_CSRF_CHECK_DEFAULT = False
 
     SCHEDULER_JOBSTORES = {
-        'default': MongoDBJobStore(database='apscheduler', collection='anchore_jobs',
-                                   host='mongodb://%s:%s@%s:%s/' % (MONGO_USER, MONGO_PWD, MONGO_IP, MONGO_PORT))
+        'default': MongoDBJobStore(database='%s' % MONGO_DB_NAME, collection='anchore_jobs',
+                                   host='mongodb://%s:%s@%s:%s/%s' % (MONGO_USER, MONGO_PWD, MONGO_IP, MONGO_PORT, MONGO_DB_NAME))
     }
     SCHEDULER_EXECUTORS = {
         'default': {'type': 'threadpool', 'max_workers': 20}

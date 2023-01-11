@@ -23,5 +23,5 @@ csrf.init_app(app)
 
 apscheduler = APScheduler()
 
-mongo = MongoDB(host=MONGO_IP, port=MONGO_PORT, username=MONGO_USER, password=MONGO_PWD)
+mongo = MongoDB(host=MONGO_IP, port=MONGO_PORT, database=MONGO_DB_NAME, username=MONGO_USER, password=MONGO_PWD)
 log = Log()

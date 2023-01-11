@@ -1,17 +1,24 @@
 version: '3'
 services:
   mongo:
-    image: mongo:latest
+    image: bitnami/mongodb:5.0
     volumes:
-      - db-data:/data/db
+      - db-data:/bitnami/mongodb
       - /etc/localtime:/etc/localtime:ro
     networks:
       - back-tier
+    restart: always
     environment:
-      MONGO_INITDB_ROOT_USERNAME: anchore_ui
-      MONGO_INITDB_ROOT_PASSWORD: 123456
+      MONGODB_ROOT_USER: 'root'
+      MONGODB_ROOT_PASSWORD: 'r00t'
+      MONGODB_USERNAME: 'anchore_ui'
+      MONGODB_PASSWORD: '123456'
+      MONGODB_DATABASE: 'anchore'
 
   scanner:
+    build: .
+    depends_on:
+      - mongo
     image: anchore_ui:latest
     volumes:
       - /etc/localtime:/etc/localtime:ro
@@ -23,16 +30,17 @@ services:
       - back-tier
     restart: always
     environment:
-      MONGO_IP: mongo
+      MONGO_IP: 'mongo'
       MONGO_PORT: 27017
-      MONGO_USER: anchore_ui
-      MONGO_PWD: 123456
-      UI_USERNAME: user
-      UI_PASSWORD: user
+      MONGO_DB_NAME: 'anchore'
+      MONGO_USER: 'anchore_ui'
+      MONGO_PWD: '123456'
+      UI_USERNAME: 'user'
+      UI_PASSWORD: 'user'
       # Please modify the following configuration with your Anchore settings
-      ANCHORE_API: http://anchore-engine-api.nip.io
-      ANCHORE_USERNAME: admin
-      ANCHORE_PASSWORD: anchore
+      ANCHORE_API: 'http://anchore-engine-api.nip.io'
+      ANCHORE_USERNAME: 'admin'
+      ANCHORE_PASSWORD: 'anchore'
 
 volumes:
   db-data:
