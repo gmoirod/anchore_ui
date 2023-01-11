@@ -1,6 +1,7 @@
 # Anchore_ui
 
-![](docs/pic/show.png)
+![List](docs/pic/list.png)
+![Detail](docs/pic/detail.png)
 
 ## Presentation
 
