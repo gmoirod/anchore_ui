@@ -248,90 +248,123 @@ def get_images():
 def sync_data(force=False):
     try:
         syncSuccess = True
+
+        # Get all images in local db and map them to a list
         mongo_anchore_result = mongo.conn[MONGO_DB_NAME][MONGO_SCAN_RESULT_COLL]
+        all_local_images = mongo_anchore_result.find({}, {"imageId": 1, "fulltag": 1})
 
         # List all pairs (imageId, fulltag) in Anchore visible to the user
         anchore_summaries = req(ANCHORE_API + "/summaries/imagetags", ANCHORE_USERNAME, ANCHORE_PASSWORD)
 
-        if anchore_summaries:
+        # Get image to delete locally
+        list_local_images = map(lambda x:  {"imageId": x["imageId"], "fulltag": x["fulltag"]}, all_local_images)
+        list_anchore_summaries = map(lambda x:  {"imageId": x["imageId"], "fulltag": x["fulltag"]}, anchore_summaries)
+        toDelete = diff = [item for item in list_local_images if item not in list_anchore_summaries]
 
-            # Loop on Anchore results
-            for image in anchore_summaries:
-                try:
-                    log.info("synchronizing: %s-%s" % (image["imageId"], image['fulltag']))
-                    # Init an empty risk
-                    risk = {
-                        'critical': 0,
-                        'high': 0,
-                        'medium': 0,
-                        'low': 0,
-                        'negligible': 0,
-                        'unknown': 0
-                    }
-                    image["risk"] = risk
-                    image["vulnerabilities"] = []
-                    image["affected_package_count"] = 0
-                    image["evaluations"] = []
-                    affected_package_count = set()
-                    # Extract project name
-                    image["project_name"] = image['fulltag'][
-                                            image['fulltag'].rfind("/") + 1:image['fulltag'].rfind(":")]
+        ####################################################################################
+        # Update or Insert
+        log.info("Sync: %i images to upsert" % len(anchore_summaries))
+        for image in anchore_summaries:
 
-                    # If current analysis is failed, drop last analysis date (if a previous date was set, Anchore let it)
-                    if image["analysis_status"] == "analysis_failed":
-                        image["analyzed_at"] = None
+            # # Remove image from all_local_images
+            # image_to_remove = {"imageId":image["imageId"], "fulltag": image['fulltag']}
+            # local_images_not_in_anchore = [x for x in local_images_not_in_anchore if not all(x.get(k)==v for k,v in image_to_remove.items() )]
 
-                    # New triplet is in status "analyzed" ? => Get vulns and evaluations
-                    if image["analysis_status"] == "analyzed":
-                        ####################################################################################
-                        # Get all vulns
-                        resp_vlun = req(ANCHORE_API + "/images/by_id/" + image["imageId"] + "/vuln/all",
-                                        ANCHORE_USERNAME, ANCHORE_PASSWORD)
-                        if resp_vlun:
-                            # Manage vulnerabilities 1 by 1
-                            for vlun_item in resp_vlun['vulnerabilities']:
-                                # Add package_name to the set
-                                affected_package_count.add(vlun_item['package_name'])
+            try:
+                log.info("Sync: Upsert: %s-%s" % (image["imageId"], image['fulltag']))
+                # Init an empty risk
+                risk = {
+                    'critical': 0,
+                    'high': 0,
+                    'medium': 0,
+                    'low': 0,
+                    'negligible': 0,
+                    'unknown': 0
+                }
+                image["risk"] = risk
+                image["vulnerabilities"] = []
+                image["affected_package_count"] = 0
+                image["evaluations"] = []
+                affected_package_count = set()
+                # Extract project name
+                image["project_name"] = image['fulltag'][
+                                        image['fulltag'].rfind("/") + 1:image['fulltag'].rfind(":")]
 
-                                # Increment corresponding severity
-                                if vlun_item['severity'] == "Critical":
-                                    risk['critical'] += 1
-                                elif vlun_item['severity'] == "High":
-                                    risk['high'] += 1
-                                elif vlun_item['severity'] == "Medium":
-                                    risk['medium'] += 1
-                                elif vlun_item['severity'] == "Low":
-                                    risk['low'] += 1
-                                elif vlun_item['severity'] == "Negligible":
-                                    risk['negligible'] += 1
-                                elif vlun_item['severity'] == "Unknown":
-                                    risk['unknown'] += 1
+                # If current analysis is failed, drop last analysis date (if a previous date was set, Anchore let it)
+                if image["analysis_status"] == "analysis_failed":
+                    image["analyzed_at"] = None
 
-                            image["vulnerabilities"] = resp_vlun["vulnerabilities"]
-                            image["affected_package_count"] = len(affected_package_count)                        
-                            image["risk"] = risk
+                # New triplet is in status "analyzed" ? => Get vulns and evaluations
+                if image["analysis_status"] == "analyzed":
+                    ###################
+                    # Get all vulns
+                    ###################
+                    resp_vlun = req(ANCHORE_API + "/images/by_id/" + image["imageId"] + "/vuln/all",
+                                    ANCHORE_USERNAME, ANCHORE_PASSWORD)
+                    if resp_vlun:
+                        # Manage vulnerabilities 1 by 1
+                        for vlun_item in resp_vlun['vulnerabilities']:
+                            # Add package_name to the set
+                            affected_package_count.add(vlun_item['package_name'])
 
-                        ####################################################################################
-                        # Get all evaluations (evaluations can appear even without new analysis)
-                        evaluations = req(ANCHORE_API + "/images/by_id/" + image["imageId"] + "/check?tag="+image["fulltag"],
-                                        ANCHORE_USERNAME, ANCHORE_PASSWORD)
-                        if evaluations:                        
-                            evaluation_list = evaluations[0][image["imageDigest"]][image["fulltag"]]
-                            #log.debug(evaluation_list)
-                            image["evaluations"] = evaluation_list
+                            # Increment corresponding severity
+                            if vlun_item['severity'] == "Critical":
+                                risk['critical'] += 1
+                            elif vlun_item['severity'] == "High":
+                                risk['high'] += 1
+                            elif vlun_item['severity'] == "Medium":
+                                risk['medium'] += 1
+                            elif vlun_item['severity'] == "Low":
+                                risk['low'] += 1
+                            elif vlun_item['severity'] == "Negligible":
+                                risk['negligible'] += 1
+                            elif vlun_item['severity'] == "Unknown":
+                                risk['unknown'] += 1
 
-                    ####################################################################################
-                    # Persist if analysis is OK or KO, not pending
-                    if image["analysis_status"] == "analyzed" or image["analysis_status"] == "analysis_failed":
-                        # Insert or update, use pair (imageId, fulltag) as key
-                        mongo_anchore_result.update_many({"imageId": image["imageId"], "fulltag": image["fulltag"]}, {"$set": image}, upsert=True)
-                        log.info("synced image: %s-%s" % (image["imageId"], image['fulltag']))                            
+                        image["vulnerabilities"] = resp_vlun["vulnerabilities"]
+                        image["affected_package_count"] = len(affected_package_count)                        
+                        image["risk"] = risk
 
-                except Exception as e:
-                    # Log error on image but continue on others
-                    log.exception("Error synchronizing %s" % image["imageId"])
-                    syncSuccess = False
-            # end loop
+                    ###################
+                    # Get all evaluations (evaluations can appear even without new analysis)
+                    ###################
+                    evaluations = req(ANCHORE_API + "/images/by_id/" + image["imageId"] + "/check?tag="+image["fulltag"],
+                                    ANCHORE_USERNAME, ANCHORE_PASSWORD)
+                    if evaluations:                        
+                        evaluation_list = evaluations[0][image["imageDigest"]][image["fulltag"]]
+                        #log.debug(evaluation_list)
+                        image["evaluations"] = evaluation_list
+
+                ###################
+                # Persist if analysis is OK or KO, not pending
+                ###################
+                if image["analysis_status"] == "analyzed" or image["analysis_status"] == "analysis_failed":
+                    # Insert or update, use pair (imageId, fulltag) as key
+                    mongo_anchore_result.update_one({"imageId": image["imageId"], "fulltag": image["fulltag"]}, {"$set": image}, upsert=True)
+                    log.info("Sync: Upserted image: %s-%s" % (image["imageId"], image['fulltag']))
+                else:
+                    log.info("Sync: mage currently in analysis: %s-%s" % (image["imageId"], image['fulltag']))
+
+            except Exception as e:
+                # Log error on image but continue on others
+                log.exception("Sync: Error upserting %s" % image["imageId"])
+                syncSuccess = False
+        # end loop
+        ####################################################################################
+
+        ####################################################################################
+        # Delete all records in local_images_not_in_anchore
+        log.info("Sync: %i images to delete" % len(toDelete))
+        for image_to_delete in toDelete:
+            try:
+                log.info("Sync: Delete image: %s" % image_to_delete)
+                mongo_anchore_result.delete_many({"imageId": image_to_delete["imageId"], "fulltag": image_to_delete["fulltag"]})
+                log.info("Sync: Deleted image: %s" % image_to_delete)
+            except Exception as e:
+                log.exception("Sync: Error deleting %s" % image_to_delete)
+                syncSuccess = False
+        # end loop
+        ####################################################################################
 
         if syncSuccess:
             return 0
