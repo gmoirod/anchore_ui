@@ -131,3 +131,7 @@ scanner_1  | [2023-01-11 Wednesday 17:06] [INFO]  * Running on http://0.0.0.0:88
 Just set up a scheduled task to sync anchor scans at regular intervals.
 
 ![](docs/pic/1.png)
+
+## Roadmap
+
+Version 2 should get rid of database. We could get results from Anchore API directly.
