@@ -39,7 +39,7 @@ services:
       UI_PASSWORD: 'user'
       # Please modify the following configuration with your Anchore settings
       ANCHORE_API: 'http://anchore-engine-api.nip.io'
-      ANCHORE_USERNAME: 'admin'
+      ANCHORE_USERNAME: 'anchore_user'
       ANCHORE_PASSWORD: 'anchore'
 
 volumes:

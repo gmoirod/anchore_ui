@@ -5,7 +5,7 @@
 
 ## Presentation
 
-**Anchore_ui** This is a web-based system for presenting the results of Anchore engine scans. It also improves Anchore's scan results, for example, for java language patches, Anchore does not provide a patched version of the vulnerability, this system fixes this problem.
+**Anchore_ui** is a web-based system for presenting the results of Anchore engine scans. It also improves Anchore's scan results, for example, by giving a trend over time for a given tag, or giving stats on most affected packages.
 
 ## Supported Platforms
 
@@ -14,10 +14,10 @@
 
 ## Features
 
-* Integrate anchor analysis results and evaluation by tag
-* Display trend over time for a given tag
-* Display statistics (severity, packages) for a given tag
-* Export vulnerabilities to excel files
+* Integrates anchor analysis results and evaluation by tag
+* Displays trend over time for a given tag
+* Displays statistics (severity, packages) for a given tag
+* Exports vulnerabilities to excel files
 
 ## Install guide
 
@@ -39,8 +39,8 @@ The steps are as follows.
 
 **Create new db user on mongodb server**, here a new user with username `anchore_ui` and password `123456` is created.
 
-```
-# mongo
+```bash
+$ mongo
 > use admin
 > db.createUser({user:'anchore_ui',pwd:'123456', roles :[{role:'readWriteAnyDatabase', db:'admin'}]})
 > exit
@@ -48,38 +48,39 @@ The steps are as follows.
 
 #### 2. Install python dependencies
 
-```
-# git clone https://github.com/gmoirod/anchore_ui.git
-# cd anchore_ui
-# pip install -r requirements.txt
+```bash
+$ git clone https://github.com/gmoirod/anchore_ui.git
+$ cd anchore_ui
+$ pip install -r requirements.txt
 ```
 
 #### 3.Modify the configuration file
 
 First make a copy of `config.py.sample` and rename it to `config.py`.
-```
-# cp anchore_ui/config.py.sample anchore_ui/config.py
+```bash
+$ cp anchore_ui/config.py.sample anchore_ui/config.py
 ```
 
 Next, change the configuration information in config.py:
 
-```
+```python
 # Track actual configuration related to mongodb
 MONGO_IP = '192.168.47.1'
 MONGO_PORT = 27017
+MONGO_DB_NAME: 'anchore'
 MONGO_USER = 'anchore_ui'
 MONGO_PWD = '123456'
 # Modify anchore configuration according to actual situation
-ANCHORE_API = "http://192.168.1.1:8228"
-ANCHORE_USERNAME = " admin
-MOT DE PASSE = "foobar"
+ANCHORE_API = 'http://192.168.1.1:8228'
+ANCHORE_USERNAME = 'anchore_user'
+ANCHORE_PASSWORD = 'anchore'
 ```
 
 #### 4. Startup
 
 In the program directory, run the following command
-```
-# python run.py
+```bash
+$ python run.py
 ```
 
 ### Containerized deployment
@@ -93,13 +94,14 @@ Copy [docker-compose.yml.sample](docker-compose.yml.sample) to a docker-compose.
     environment:
       MONGO_IP: 'mongo'
       MONGO_PORT: 27017
+      MONGO_DB_NAME: 'anchore'
       MONGO_USER: 'anchore_ui'
       MONGO_PWD: '123456'
       UI_USERNAME: 'user'
       UI_PASSWORD: 'user'
       # Please modify the following configuration with your Anchore settings
       ANCHORE_API: 'http://anchore-engine-api.nip.io'
-      ANCHORE_USERNAME: 'admin'
+      ANCHORE_USERNAME: 'anchore_user'
       ANCHORE_PASSWORD: 'anchore'
 ...
 ```
