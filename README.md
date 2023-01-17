@@ -3,6 +3,17 @@
 ![List](docs/pic/list.png)
 ![Detail](docs/pic/detail.png)
 
+**Table of Contents**
+- [Presentation](#presentation)
+- [Supported Platforms](#supported-platforms)
+- [Features](#features)
+- [Install guide](#install-guide)
+    - [Source Code Deployment](#source-code-deployment)
+    - [Containerized deployment](#containerized-deployment)
+    - [Kubernetes/Openshift deployment](#kubernetesopenshift-deployment)
+- [User Guide](#user-guide)
+- [Roadmap](#roadmap)
+
 ## Presentation
 
 **Anchore_ui** is a web-based system for presenting the results of Anchore engine scans. It also improves Anchore's scan results, for example, by giving a trend over time for a given tag, or giving stats on most affected packages.
@@ -124,6 +135,26 @@ scanner_1  |    Use a production WSGI server instead.
 scanner_1  |  * Debug mode: on
 scanner_1  | [2023-01-11 Wednesday 17:06] [DEBUG] No jobs; waiting until a job is added
 scanner_1  | [2023-01-11 Wednesday 17:06] [INFO]  * Running on http://0.0.0.0:8888/ (Press CTRL+C to quit)
+```
+
+### Kubernetes/Openshift deployment
+
+**Prerequisites** : Helm 3.7+
+
+#### 1. Build and publish Docker image
+
+```bash
+$ docker-compose up --build -d
+$ docker tag anchore_ui:latest <my_registry>/<my_repo>/anchore_ui:latest
+$ docker push <my_registry>/<my_repo>/anchore_ui:latest
+```
+
+#### 2. Deploy using Helm v3
+
+Deploy using Helm Chart provided :
+```bash
+$ cd helm
+$ helm upgrade --install --atomic anchoreui . --set image.repository=<my_registry>/<my_repo>/anchore_ui
 ```
 
 ## User Guide
