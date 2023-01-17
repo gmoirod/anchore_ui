@@ -33,19 +33,19 @@ spec:
               protocol: TCP
           livenessProbe:
             httpGet:
-              path: /
+              path: /login
               port: http
           readinessProbe:
             httpGet:
-              path: /
+              path: /login
               port: http
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           env:
             - name: 'MONGO_IP'
-              value: {{ include "mongodb.fullname" . }}
+              value: {{ include "mongodb.fullname" .Subcharts.mongodb }}
             - name: 'MONGO_PORT'
-              value: {{ .Values.mongodb.service.ports.mongodb }}
+              value: {{ .Values.mongodb.service.ports.mongodb | quote }}
             - name: 'MONGO_DB_NAME'
               value: {{ first .Values.mongodb.auth.databases | quote }}
             - name: 'MONGO_USER'
@@ -53,7 +53,7 @@ spec:
             - name: 'MONGO_PWD'
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "mongodb.fullname" . }}
+                  name: {{ include "mongodb.fullname" .Subcharts.mongodb }}
                   key: "mongodb-passwords"
             - name: 'UI_USERNAME'
               valueFrom:
@@ -79,14 +79,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: {{ include "anchore-ui.engineSecretName" .}}
-                  key: {{ include "anchore-ui.engineSecretPasswordKey" .}}          
-          volumeMounts:
-            - name: localtime
-              mountPath: /etc/localtime
-              readOnly: true
-            - name: timezone
-              mountPath: /etc/timezone
-              readOnly: true
+                  key: {{ include "anchore-ui.engineSecretPasswordKey" .}}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
@@ -99,10 +92,4 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      volumes:
-        - name: localtime
-          hostPath:
-            path: /etc/localtime
-        - name: timezone
-          hostPath:
-            path: /etc/timezone
+

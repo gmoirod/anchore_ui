@@ -6,6 +6,7 @@ ENV LC_ALL C.UTF-8
 
 RUN set -x \
     && apt-get update \
+    && apt-get upgrade \
     && apt-get install -y --no-install-recommends \
         python-dev=2.7.15~rc1-1 \
         python-setuptools=39.0.1-2 \

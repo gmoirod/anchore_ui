@@ -139,6 +139,8 @@ scanner_1  | [2023-01-11 Wednesday 17:06] [INFO]  * Running on http://0.0.0.0:88
 
 ### Kubernetes/Openshift deployment
 
+**Prerequisites** : Helm 3.7+
+
 #### 1. Build and publish Docker image
 
 ```bash

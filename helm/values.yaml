@@ -116,12 +116,23 @@ mongodb:
     passwords: ["123456"]
     databases: ["anchore"]
 
-  ## extraVolumes:
-  extraVolumeMounts:
-    - name: localtime
-      mountPath: /etc/localtime
-      readOnly: true
-  extraVolumes:
-    - name: localtime
-      hostPath:
-        path: /etc/localtime
+  # Remove dedicated user 1001 to run everywhere
+  podSecurityContext:
+    enabled: false
+  containerSecurityContext:
+    enabled: false
+    runAsUser: ""
+  
+  resources:
+    ## Example:
+    ## limits:
+    ##    cpu: 100m
+    ##    memory: 128Mi
+    ##
+    limits: {}
+    ## Examples:
+    ## requests:
+    ##    cpu: 100m
+    ##    memory: 128Mi
+    ##
+    requests: {}
