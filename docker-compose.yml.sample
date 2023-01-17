@@ -4,7 +4,6 @@ services:
     image: bitnami/mongodb:5.0
     volumes:
       - db-data:/bitnami/mongodb
-      - /etc/localtime:/etc/localtime:ro
     networks:
       - back-tier
     restart: always
@@ -20,9 +19,6 @@ services:
     depends_on:
       - mongo
     image: anchore_ui:latest
-    volumes:
-      - /etc/localtime:/etc/localtime:ro
-      - /etc/timezone:/etc/timezone:ro
     ports:
       - "8888:8888"
     networks:
