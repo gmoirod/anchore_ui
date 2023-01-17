@@ -1,0 +1,108 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "anchore-ui.fullname" . }}
+  labels:
+    {{- include "anchore-ui.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "anchore-ui.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "anchore-ui.selectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "anchore-ui.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8888
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          env:
+            - name: 'MONGO_IP'
+              value: {{ include "mongodb.fullname" . }}
+            - name: 'MONGO_PORT'
+              value: {{ .Values.mongodb.service.ports.mongodb }}
+            - name: 'MONGO_DB_NAME'
+              value: {{ first .Values.mongodb.auth.databases | quote }}
+            - name: 'MONGO_USER'
+              value: {{ first .Values.mongodb.auth.usernames | quote }}
+            - name: 'MONGO_PWD'
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "mongodb.fullname" . }}
+                  key: "mongodb-passwords"
+            - name: 'UI_USERNAME'
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "anchore-ui.uiSecretName" .}}
+                  key: login
+            - name: 'UI_PASSWORD'
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "anchore-ui.uiSecretName" .}}
+                  key: password
+            - name: 'ANCHORE_API'
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "anchore-ui.fullname" . }}
+                  key: anchoreApi
+            - name: 'ANCHORE_USERNAME'
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "anchore-ui.engineSecretName" .}}
+                  key: {{ include "anchore-ui.engineSecretLoginKey" .}}
+            - name: 'ANCHORE_PASSWORD'
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "anchore-ui.engineSecretName" .}}
+                  key: {{ include "anchore-ui.engineSecretPasswordKey" .}}          
+          volumeMounts:
+            - name: localtime
+              mountPath: /etc/localtime
+              readOnly: true
+            - name: timezone
+              mountPath: /etc/timezone
+              readOnly: true
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+        - name: localtime
+          hostPath:
+            path: /etc/localtime
+        - name: timezone
+          hostPath:
+            path: /etc/timezone

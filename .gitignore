@@ -8,3 +8,6 @@ venv/
 .vscode
 docker-compose.yml
 config.py
+**/out/
+**/charts/
+**/*.lock

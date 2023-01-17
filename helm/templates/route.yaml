@@ -1,0 +1,21 @@
+{{- if .Values.openshift.route.enabled -}}
+
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: {{ include "anchore-ui.fullname" . }}
+  labels:
+    {{- include "anchore-ui.labels" . | nindent 4 }}
+spec:
+  host: {{ .Values.openshift.route.host }}
+  port:
+    targetPort: http
+  to:
+    kind: Service
+    name: {{ include "anchore-ui.fullname" . }}
+  {{- if .Values.openshift.route.tls }}
+  tls:
+    {{- toYaml .Values.openshift.route.tls | nindent 4 }}
+  {{- end }}  
+
+{{- end }}

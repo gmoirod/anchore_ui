@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "anchore-ui.fullname" . }}
+  labels:
+    {{- include "anchore-ui.labels" . | nindent 4 }}
+data:
+  anchoreApi: {{ .Values.anchore.api.url }}
